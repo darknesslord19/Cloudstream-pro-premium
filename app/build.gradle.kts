@@ -87,15 +87,15 @@ android {
         // the same key so new APKs install over old ones. The workflow
         // prefers the DARK_KEYSTORE_* secrets; otherwise it falls back to
         // the keystore committed under keystore/.
-        val darkStore = System.getenv("DARK_KEYSTORE_FILE")
+        val darkStore = System.getenv("DARK_KEYSTORE_FILE")?.takeIf { it.isNotBlank() }
             ?.let { file(it) }
             ?: rootProject.file("keystore/dark.jks")
         if (darkStore.exists()) {
             create("dark") {
                 storeFile = darkStore
-                storePassword = System.getenv("DARK_KEYSTORE_PASSWORD") ?: "darkcloudstream"
-                keyAlias = System.getenv("DARK_KEY_ALIAS") ?: "dark"
-                keyPassword = System.getenv("DARK_KEY_PASSWORD") ?: "darkcloudstream"
+                storePassword = System.getenv("DARK_KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() } ?: "darkcloudstream"
+                keyAlias = System.getenv("DARK_KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "dark"
+                keyPassword = System.getenv("DARK_KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: "darkcloudstream"
             }
         }
         // We just use SIGNING_KEY_ALIAS here since it won't change
