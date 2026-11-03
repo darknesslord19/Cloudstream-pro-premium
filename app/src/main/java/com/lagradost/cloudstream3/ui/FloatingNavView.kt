@@ -14,13 +14,11 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -124,7 +122,28 @@ class FloatingNavView @JvmOverloads constructor(
     private val baseBottomLiftPx = dp(14f)
     private val scrubThresholdPx = dp(8f).toFloat()
 
-    private val inactiveTint = Color.rgb(168, 168, 168)
+    private val inactiveTint = Color.rgb(150, 150, 150)
+    private val activeTint = Color.rgb(0xF5, 0xC5, 0x42) // CloudStream Dark gold
+
+    /** CloudStream Dark: icon-only bar unless the user turned labels on
+     *  (Settings → Layout → "Bottom bar labels"). */
+    private var showLabels = readShowLabels()
+
+    private fun readShowLabels(): Boolean = runCatching {
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(NAV_LABELS_KEY, false)
+    }.getOrDefault(false)
+
+    private val prefListener =
+        android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == NAV_LABELS_KEY) {
+                val value = readShowLabels()
+                if (value != showLabels) {
+                    showLabels = value
+                    applySelection(animate = false)
+                }
+            }
+        }
 
     private val pill: FrameLayout
     private val row: LinearLayout
@@ -163,7 +182,7 @@ class FloatingNavView @JvmOverloads constructor(
             )
             setBackgroundResource(R.drawable.bg_floating_nav_pill)
             setPadding(dp(6f), dp(6f), dp(6f), dp(6f))
-            elevation = dp(8f).toFloat()
+            elevation = 0f
         }
 
         row = LinearLayout(context).apply {
@@ -248,8 +267,25 @@ class FloatingNavView @JvmOverloads constructor(
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        runCatching {
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .registerOnSharedPreferenceChangeListener(prefListener)
+        }
+        val value = readShowLabels()
+        if (value != showLabels) {
+            showLabels = value
+            applySelection(animate = false)
+        }
+    }
+
     override fun onDetachedFromWindow() {
         widthAnimator?.cancel()
+        runCatching {
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .unregisterOnSharedPreferenceChangeListener(prefListener)
+        }
         super.onDetachedFromWindow()
     }
 
@@ -296,7 +332,7 @@ class FloatingNavView @JvmOverloads constructor(
         if (index < 0) return
         iconViews[index].setImageResource(iconRes)
         iconViews[index].setColorFilter(
-            if (index == selectedIndex) Color.WHITE else inactiveTint
+            if (index == selectedIndex) activeTint else inactiveTint
         )
     }
 
@@ -306,25 +342,13 @@ class FloatingNavView @JvmOverloads constructor(
         return itemViews.getOrNull(index)
     }
 
-    /** The organic blob from the approved preview (border-radius
-     *  58% 42% 55% 45% / 52% 55% 45% 48% on the settled ~110x50dp item),
-     *  expressed as fixed per-corner radii so the shape reads the same
-     *  on every tab. Radii sums stay below the smallest expanded width
-     *  and the item height, so nothing clamps at rest; mid-animation
-     *  the platform scales them down, which is what morphs the shape
-     *  from pill to blob as the item springs open. Fill is the settled
-     *  grey (@color/extButtonBackground, #262626). A fresh instance per
-     *  application — a Drawable can only live on one View at a time. */
+    /** Selected-item highlight: a plain fully-rounded pill in a soft
+     *  gold tint — symmetric, no shadow, same shape on every tab. */
     private fun makeBlobBackground(): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            setColor(ContextCompat.getColor(context, R.color.extButtonBackground))
-            cornerRadii = floatArrayOf(
-                dp(56f).toFloat(), dp(24f).toFloat(), // top-left
-                dp(44f).toFloat(), dp(25f).toFloat(), // top-right
-                dp(54f).toFloat(), dp(21f).toFloat(), // bottom-right
-                dp(46f).toFloat(), dp(22f).toFloat(), // bottom-left
-            )
+            setColor(Color.argb(46, 0xF5, 0xC5, 0x42))
+            cornerRadius = itemHeightPx / 2f
         }
     }
 
@@ -341,33 +365,38 @@ class FloatingNavView @JvmOverloads constructor(
 
     private fun applySelection(animate: Boolean) {
         val targets = IntArray(navItems.size) { index ->
-            if (index == selectedIndex) expandedWidths[index] else collapsedWidthPx
+            if (showLabels && index == selectedIndex) expandedWidths[index] else collapsedWidthPx
         }
         widthAnimator?.cancel()
         refreshItemBackgrounds()
-        iconViews[selectedIndex].setColorFilter(Color.WHITE)
+        // Icon-only: centre the icon in its square cell; with labels the
+        // icon+label group starts at the item padding.
+        itemViews.forEachIndexed { index, view ->
+            val centred = !showLabels || index != selectedIndex
+            view.gravity = if (centred) Gravity.CENTER else Gravity.CENTER_VERTICAL
+            view.setPadding(if (centred) 0 else itemPadPx, 0, 0, 0)
+            labelViews[index].visibility =
+                if (showLabels && index == selectedIndex) View.VISIBLE else View.GONE
+        }
+        iconViews.forEachIndexed { index, icon ->
+            icon.setColorFilter(if (index == selectedIndex) activeTint else inactiveTint)
+        }
         if (!animate) {
             itemViews.forEachIndexed { index, view ->
                 (view.layoutParams as LinearLayout.LayoutParams).width = targets[index]
                 view.requestLayout()
             }
-            labelViews.forEachIndexed { index, label ->
-                label.alpha = if (index == selectedIndex) 1f else 0f
+            labelViews.forEach { label ->
+                label.alpha = 1f
                 label.translationX = 0f
-            }
-            iconViews.forEachIndexed { index, icon ->
-                icon.setColorFilter(if (index == selectedIndex) Color.WHITE else inactiveTint)
             }
             requestLayout()
             return
         }
-        val starts = IntArray(navItems.size) { itemViews[it].width }
-        val previousIndex = starts.indices.firstOrNull {
-            it != selectedIndex && starts[it] > collapsedWidthPx
-        }
+        val starts = IntArray(navItems.size) { itemViews[it].width.takeIf { w -> w > 0 } ?: targets[it] }
         val animator = ValueAnimator.ofFloat(0f, 1f)
-        animator.duration = 420
-        animator.interpolator = OvershootInterpolator(1.1f)
+        animator.duration = 220
+        animator.interpolator = android.view.animation.DecelerateInterpolator()
         animator.addUpdateListener { valueAnimator ->
             val fraction = valueAnimator.animatedValue as Float
             itemViews.forEachIndexed { index, view ->
@@ -379,17 +408,8 @@ class FloatingNavView @JvmOverloads constructor(
                     view.layoutParams = lp
                 }
             }
-            val incomingAlpha = ((fraction - 0.3f) / 0.7f).coerceIn(0f, 1f)
-            labelViews[selectedIndex].alpha = incomingAlpha
-            labelViews[selectedIndex].translationX =
-                -dp(8f) * (1f - incomingAlpha)
-            if (previousIndex != null) {
-                labelViews[previousIndex].alpha =
-                    (1f - fraction * 2.5f).coerceIn(0f, 1f)
-                iconViews[previousIndex].setColorFilter(
-                    if (fraction >= 1f) inactiveTint else Color.WHITE
-                )
-            }
+            labelViews[selectedIndex].alpha = fraction
+            itemViews[selectedIndex].background?.alpha = (fraction * 255).toInt()
             requestLayout()
         }
         widthAnimator = animator
@@ -446,5 +466,9 @@ class FloatingNavView @JvmOverloads constructor(
             }
         }
         return false
+    }
+
+    companion object {
+        const val NAV_LABELS_KEY = "nav_show_labels"
     }
 }

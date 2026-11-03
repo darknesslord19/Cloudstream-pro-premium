@@ -94,9 +94,13 @@ object NuvioStreamService {
         canonicalType: String,
         season: Int? = null,
         episode: Int? = null,
+        only: Pair<String, String>? = null,
     ): List<StremioStream> {
         val targets = NuvioRepository.activeScrapers(context)
             .filter { (_, scraper) -> scraper.supportsType(canonicalType) }
+            .filter { (repo, scraper) ->
+                only == null || (repo.manifestUrl == only.first && scraper.id == only.second)
+            }
         if (targets.isEmpty()) return emptyList()
         val mediaType = NuvioScraperInfo.normalizeType(canonicalType)
         val tmdbId = NuvioTmdb.normalizeToTmdbId(context, id, canonicalType)

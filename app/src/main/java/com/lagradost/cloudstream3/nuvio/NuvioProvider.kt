@@ -42,32 +42,49 @@ import org.json.JSONObject
  * it (or with no scraper enabled) the provider is not registered
  * (see [NuvioProviders]).
  */
-class NuvioProvider : MainAPI() {
+class NuvioProvider(
+    /** Null = every enabled scraper ("Nuvio · Tümü"); otherwise only this
+     *  scraper (repo manifest URL + scraper id) — one provider per site. */
+    val onlyScraper: Pair<String, String>? = null,
+    displayName: String = "Nuvio",
+) : MainAPI() {
 
-    override var name: String = "Nuvio"
+    override var name: String = displayName
     override var mainUrl: String = "https://www.themoviedb.org"
-    override var lang: String = "en"
+    override var lang: String = "tr"
 
     override val hasMainPage: Boolean = true
 
+    // CloudStream Dark: Turkish-first catalogue (TMDB in tr-TR). Query
+    // parameters ride along in `data` after a '?'.
     override val mainPage: List<MainPageData> = listOf(
         MainPageData(
-            name = "Trending Movies",
+            name = "Yerli Diziler",
+            data = "discover/tv?with_original_language=tr&sort_by=popularity.desc",
+            horizontalImages = false,
+        ),
+        MainPageData(
+            name = "Yerli Filmler",
+            data = "discover/movie?with_original_language=tr&sort_by=popularity.desc",
+            horizontalImages = false,
+        ),
+        MainPageData(
+            name = "Haftanın Trend Filmleri",
             data = "trending/movie/week",
             horizontalImages = false,
         ),
         MainPageData(
-            name = "Trending Series",
+            name = "Haftanın Trend Dizileri",
             data = "trending/tv/week",
             horizontalImages = false,
         ),
         MainPageData(
-            name = "Popular Movies",
+            name = "Popüler Filmler",
             data = "movie/popular",
             horizontalImages = false,
         ),
         MainPageData(
-            name = "Popular Series",
+            name = "Popüler Diziler",
             data = "tv/popular",
             horizontalImages = false,
         ),
@@ -85,7 +102,8 @@ class NuvioProvider : MainAPI() {
         params: Map<String, String> = emptyMap(),
     ): JSONObject? {
         val key = NuvioTmdb.apiKey(context) ?: return null
-        val allParams = params.toMutableMap()
+        val allParams = mutableMapOf("language" to "tr-TR", "region" to "TR")
+        allParams.putAll(params)
         val headers = mutableMapOf<String, String>()
         if (key.startsWith("eyJ")) {
             headers["Authorization"] = "Bearer $key"
@@ -108,18 +126,24 @@ class NuvioProvider : MainAPI() {
         request: MainPageRequest,
     ): HomePageResponse? {
         val context = appContext() ?: return null
+        val path = request.data.substringBefore('?')
+        val query = request.data.substringAfter('?', "")
+            .split('&').filter { it.contains('=') }
+            .associate { it.substringBefore('=') to it.substringAfter('=') }
         val json = tmdbGet(
-            context, request.data,
-            mapOf("page" to page.toString()),
+            context, path,
+            query + mapOf("page" to page.toString()),
         ) ?: return null
-        val isTv = request.data.contains("/tv") ||
-            request.data.startsWith("tv/")
+        val isTv = path.contains("/tv") || path.startsWith("tv/")
         val items = parseResults(json, forceTv = isTv)
         val totalPages = json.optInt("total_pages", 1)
         return newHomePageResponse(request.name, items, page < totalPages)
     }
 
     override suspend fun search(query: String): List<SearchResponse>? {
+        // Every per-site provider shares the same TMDB catalogue; only the
+        // aggregate searches, so results are not repeated once per site.
+        if (onlyScraper != null) return null
         val context = appContext() ?: return null
         val (movies, series) = coroutineScope {
             val m = async {
@@ -307,6 +331,7 @@ class NuvioProvider : MainAPI() {
                 payload.type,
                 payload.season,
                 payload.episode,
+                only = onlyScraper,
             )
         }.getOrElse { emptyList() }
         val seenUrls = mutableSetOf<String>()
@@ -393,25 +418,51 @@ class NuvioProvider : MainAPI() {
  */
 object NuvioProviders {
 
-    @Volatile
-    private var registered: NuvioProvider? = null
+    private const val ALL_KEY = "*"
+
+    /** Registered providers by key: ALL_KEY for the aggregate, otherwise
+     *  "<repo manifest url>|<scraper id>" — one provider per scraper so
+     *  every site can be picked on its own from Home. */
+    private val registered = LinkedHashMap<String, NuvioProvider>()
 
     @Synchronized
     fun sync(context: Context) {
-        val usable = !NuvioTmdb.apiKey(context).isNullOrBlank() &&
+        val hasKey = !NuvioTmdb.apiKey(context).isNullOrBlank()
+        val active = if (hasKey) {
             runCatching { NuvioRepository.activeScrapers(context) }
                 .getOrElse { emptyList() }
-                .isNotEmpty()
-        val current = registered
-        if (usable && current == null) {
-            val provider = NuvioProvider()
+        } else {
+            emptyList()
+        }
+        val takenNames = APIHolder.allProviders
+            .filter { it !is NuvioProvider }
+            .map { it.name.lowercase() }
+            .toMutableSet()
+        val wanted = LinkedHashMap<String, String>() // key -> display name
+        if (active.isNotEmpty()) wanted[ALL_KEY] = "Nuvio · Tümü"
+        for ((repo, scraper) in active) {
+            var display = scraper.name.ifBlank { scraper.id }
+            if (!takenNames.add(display.lowercase())) display = "$display · Nuvio"
+            takenNames.add(display.lowercase())
+            wanted["${repo.manifestUrl}|${scraper.id}"] = display
+        }
+        // Drop providers that are gone or renamed.
+        registered.entries.toList().forEach { (key, provider) ->
+            if (wanted[key] != provider.name) {
+                APIHolder.allProviders.remove(provider)
+                APIHolder.removePluginMapping(provider)
+                registered.remove(key)
+            }
+        }
+        // Add the missing ones.
+        for ((key, display) in wanted) {
+            if (registered.containsKey(key)) continue
+            val only = if (key == ALL_KEY) null else
+                key.substringBeforeLast('|') to key.substringAfterLast('|')
+            val provider = NuvioProvider(only, display)
             APIHolder.allProviders.add(provider)
             APIHolder.addPluginMapping(provider)
-            registered = provider
-        } else if (!usable && current != null) {
-            APIHolder.allProviders.remove(current)
-            APIHolder.removePluginMapping(current)
-            registered = null
+            registered[key] = provider
         }
     }
 }

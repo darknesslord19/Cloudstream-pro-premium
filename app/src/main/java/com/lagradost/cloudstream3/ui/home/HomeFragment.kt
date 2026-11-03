@@ -518,7 +518,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         )
                     )
 
-                    api is NuvioProvider -> emptyList()
+                    api is NuvioProvider -> listOf(SwitcherTag("Nuvio", false))
 
                     api.sourcePlugin != null -> buildList {
                         repositoryTagFor(api)?.let { add(SwitcherTag(it, false)) }
@@ -549,7 +549,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                     getDisplayName(api.name) ?: api.name
                 }
                 return if (isMultiLang) {
-                    "${getFlagFromIso(api.lang)?.plus(" ") ?: ""}$base"
+                    "${with(com.lagradost.cloudstream3.utils.AppContextUtils) { api.displayFlag() }?.plus(" ") ?: ""}$base"
                 } else {
                     base
                 }

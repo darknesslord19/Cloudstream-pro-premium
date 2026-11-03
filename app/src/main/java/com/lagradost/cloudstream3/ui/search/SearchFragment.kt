@@ -729,9 +729,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
 
                         val names = currentValidApis.map {
                             if (isMultiLang) "${
-                                SubtitleHelper.getFlagFromIso(
-                                    it.lang
-                                )?.plus(" ") ?: ""
+                                with(com.lagradost.cloudstream3.utils.AppContextUtils) { it.displayFlag() }?.plus(" ") ?: ""
                             }${it.name}" else it.name
                         }
                         for ((index, api) in currentValidApis.map { it.name }.withIndex()) {

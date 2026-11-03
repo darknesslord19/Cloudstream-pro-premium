@@ -20,6 +20,12 @@
             android:key="@string/app_icon_key"
             android:title="@string/app_icon_settings" />
         <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/title_24px"
+            android:key="nav_show_labels"
+            android:summary="@string/nav_show_labels_des"
+            android:title="@string/nav_show_labels" />
+        <SwitchPreferenceCompat
             android:defaultValue="true"
             android:icon="@drawable/title_24px"
             android:key="@string/bottom_title_key"

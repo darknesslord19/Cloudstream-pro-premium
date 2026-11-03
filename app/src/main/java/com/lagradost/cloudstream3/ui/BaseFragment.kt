@@ -311,6 +311,12 @@ abstract class BasePreferenceFragmentCompat() : PreferenceFragmentCompat() {
             // would only duplicate it — and its back arrow would pop the
             // whole settings page instead of collapsing the section.
             view.findViewById<View>(R.id.settings_toolbar)?.visibility = View.GONE
+            // The section sits inside the main page's group card: drop the
+            // page's own backgrounds so the card shows through (no nested
+            // card-in-card look).
+            view.background = null
+            view.findViewById<View>(android.R.id.list_container)?.background = null
+            listView.background = null
             // Phase 8.7 (clipping fix): the page root (settings_title_top)
             // is a CoordinatorLayout whose list container carries the app-bar
             // scrolling behaviour. That behaviour never lets the list measure
@@ -367,7 +373,7 @@ abstract class BasePreferenceFragmentCompat() : PreferenceFragmentCompat() {
         // Phase 8.5D: group each category's rows into a rounded card,
         // mirroring the main settings page (Phase 5A). Pure decoration —
         // the preference tree, clicks and dependencies are untouched.
-        listView.addItemDecoration(SettingsGroupCardDecoration(requireContext()))
+        listView.addItemDecoration(SettingsGroupCardDecoration(requireContext(), embedded = isAccordionSection))
         applyNavClearancePadding()
     }
 
@@ -457,12 +463,22 @@ abstract class BasePreferenceFragmentCompat() : PreferenceFragmentCompat() {
  * automatically, and preference clicks/dependencies are never touched.
  */
 @SuppressLint("RestrictedApi") // PreferenceGroupAdapter is LIBRARY_GROUP-restricted in androidx.preference; same suppression the project already uses in CommonActivity/AppContextUtils
-private class SettingsGroupCardDecoration(context: Context) :
-    RecyclerView.ItemDecoration() {
+private class SettingsGroupCardDecoration(
+    context: Context,
+    /** Embedded in the main page's accordion card: rows sit flush inside
+     *  that card and groups are split by a hairline instead of nested cards. */
+    private val embedded: Boolean = false,
+) : RecyclerView.ItemDecoration() {
 
-    private val sideInset = 16.toPx
-    private val cardGap = 16.toPx
-    private val topGap = 16.toPx
+    private val sideInset = if (embedded) 0 else 16.toPx
+    private val cardGap = if (embedded) 1.toPx else 16.toPx
+    private val topGap = if (embedded) 0 else 16.toPx
+    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getResourceColor(R.attr.textColor)
+        alpha = 30
+        style = Paint.Style.FILL
+    }
+    private val dividerStart = 58.toPx
     private val cornerRadius = 20.toPx.toFloat()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getResourceColor(R.attr.primaryGrayBackground)
@@ -512,6 +528,25 @@ private class SettingsGroupCardDecoration(context: Context) :
 
     override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
         val adapter = parent.adapter as? PreferenceGroupAdapter ?: return
+        if (embedded) {
+            // Hairline between groups (below the last row of every group
+            // except the list's final one); the host card is the fill.
+            for (i in 0 until parent.childCount) {
+                val child = parent.getChildAt(i)
+                val position = parent.getChildAdapterPosition(child)
+                if (position == RecyclerView.NO_POSITION) continue
+                if (cardGroupOf(adapter.getItem(position)) == null) continue
+                if (position >= adapter.itemCount - 1) continue
+                if (!isLastInGroup(adapter, position)) continue
+                val y = child.bottom.toFloat()
+                c.drawRect(
+                    (parent.paddingLeft + dividerStart).toFloat(), y,
+                    (parent.width - parent.paddingRight).toFloat(), y + 1.toPx,
+                    dividerPaint
+                )
+            }
+            return
+        }
         val left = (parent.paddingLeft + sideInset).toFloat()
         val right = (parent.width - parent.paddingRight - sideInset).toFloat()
 
