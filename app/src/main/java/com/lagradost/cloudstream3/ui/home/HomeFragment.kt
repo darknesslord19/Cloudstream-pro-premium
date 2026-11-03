@@ -696,6 +696,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         }
                     )
                     rb.switcherRowTitle.text = row.title
+                    // Nuvio rows: gold "N" badge in front of the name.
+                    rb.switcherRowTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        if (row.api is NuvioProvider) R.drawable.ic_nuvio_badge else 0,
+                        0, 0, 0
+                    )
+                    rb.switcherRowTitle.compoundDrawablePadding = 8.toPx
                     rb.switcherRowTitle.typeface = if (row.selected) {
                         Typeface.DEFAULT_BOLD
                     } else {
