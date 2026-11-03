@@ -678,7 +678,7 @@
     <string name="nuvio_check_done">Check finished: %1$d load OK, %2$d broken</string>
     <string name="nuvio_repo_add_failed">Could not load that repository. Check the link and try again.</string>
     <string name="nav_show_labels">Bottom bar labels</string>
-    <string name="nav_show_labels_des">Show the selected tab's name next to its icon. Off = icons only.</string>
+    <string name="nav_show_labels_des">Show the selected tab\'s name next to its icon. Off = icons only.</string>
     <string name="nuvio_tmdb_missing">The Nuvio provider is hidden from Home and Search until you add a TMDB API key in Settings → Account (free at themoviedb.org). Your scrapers stay installed.</string>
     <string name="nuvio_plugins_empty">No Nuvio repositories yet. Tap “Add repository” and paste a Nuvio plugin repository link — its scrapers add streams to Stremio addon titles. A TMDB API key (Settings → Account) is needed so scrapers can find titles.</string>
     <string name="nuvio_repo_remove_title">Remove repository?</string>
