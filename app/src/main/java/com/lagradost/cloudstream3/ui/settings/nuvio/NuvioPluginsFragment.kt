@@ -279,6 +279,12 @@ class NuvioPluginsFragment : Fragment() {
         // Keep the browsable Nuvio provider registered exactly while
         // it can work (TMDB key set + at least one scraper enabled).
         NuvioProviders.sync(ctx)
+        view?.findViewById<TextView>(R.id.nuvio_tmdb_warning)?.visibility =
+            if (repos.isNotEmpty() && com.lagradost.cloudstream3.nuvio.NuvioTmdb.apiKey(ctx).isNullOrBlank()) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
     }
 
     private fun toast(message: Int) {

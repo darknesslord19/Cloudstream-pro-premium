@@ -27,7 +27,7 @@
     <string name="new_update_format" formatted="true">New update found!\n%1$s -&gt; %2$s</string>
     <string name="filler" formatted="true">Filler</string>
     <string name="duration_format" formatted="true">%d min</string>
-    <string name="app_name">CloudStream Pro</string>
+    <string name="app_name">CloudStream Dark</string>
     <string name="play_with_app_name">Play with CloudStream</string>
     <string name="title_home">Home</string>
     <string name="title_search">Search</string>
@@ -677,6 +677,7 @@
     <string name="nuvio_check_title">Checking scrapers</string>
     <string name="nuvio_check_done">Check finished: %1$d load OK, %2$d broken</string>
     <string name="nuvio_repo_add_failed">Could not load that repository. Check the link and try again.</string>
+    <string name="nuvio_tmdb_missing">The Nuvio provider is hidden from Home and Search until you add a TMDB API key in Settings → Account (free at themoviedb.org). Your scrapers stay installed.</string>
     <string name="nuvio_plugins_empty">No Nuvio repositories yet. Tap “Add repository” and paste a Nuvio plugin repository link — its scrapers add streams to Stremio addon titles. A TMDB API key (Settings → Account) is needed so scrapers can find titles.</string>
     <string name="nuvio_repo_remove_title">Remove repository?</string>
     <string name="nuvio_repo_remove_message">Remove %1$s and its scrapers?</string>

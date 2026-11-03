@@ -37,6 +37,19 @@
     </LinearLayout>
 
     <TextView
+        android:id="@+id/nuvio_tmdb_warning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/outline_drawable"
+        android:padding="12dp"
+        android:text="@string/nuvio_tmdb_missing"
+        android:textColor="?attr/textColor"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/nuvio_diagnostics"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

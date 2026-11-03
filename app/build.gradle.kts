@@ -83,6 +83,21 @@ android {
     }
 
     signingConfigs {
+        // CloudStream Dark release key. Every build must be signed with
+        // the same key so new APKs install over old ones. The workflow
+        // prefers the DARK_KEYSTORE_* secrets; otherwise it falls back to
+        // the keystore committed under keystore/.
+        val darkStore = System.getenv("DARK_KEYSTORE_FILE")
+            ?.let { file(it) }
+            ?: rootProject.file("keystore/dark.jks")
+        if (darkStore.exists()) {
+            create("dark") {
+                storeFile = darkStore
+                storePassword = System.getenv("DARK_KEYSTORE_PASSWORD") ?: "darkcloudstream"
+                keyAlias = System.getenv("DARK_KEY_ALIAS") ?: "dark"
+                keyPassword = System.getenv("DARK_KEY_PASSWORD") ?: "darkcloudstream"
+            }
+        }
         // We just use SIGNING_KEY_ALIAS here since it won't change
         // so won't kill the configuration cache.
         if (System.getenv("SIGNING_KEY_ALIAS") != null) {
@@ -101,7 +116,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.lagradost.cloudstream3"
+        applicationId = "com.darknesslord.cloudstream.dark"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = libs.versions.versionCode.get().toInt()
@@ -142,6 +157,9 @@ android {
 
     buildTypes {
         release {
+            if (signingConfigs.names.contains("dark")) {
+                signingConfig = signingConfigs.getByName("dark")
+            }
             isDebuggable = false
             isMinifyEnabled = false
             isShrinkResources = false

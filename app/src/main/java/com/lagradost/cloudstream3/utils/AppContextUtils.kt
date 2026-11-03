@@ -372,11 +372,22 @@ object AppContextUtils {
                     .thenBy { subtitle: SubtitleData -> subtitle.nameSuffix })
     }
 
+    /**
+     * Nuvio / Stremio / SkyStream bridge providers carry a placeholder
+     * language ("en") but serve whatever language their scrapers or
+     * addons provide, so the provider-language filter must never hide
+     * them from Home or Search.
+     */
+    fun MainAPI.isLanguageAgnosticBridge(): Boolean =
+        this is com.lagradost.cloudstream3.nuvio.NuvioProvider ||
+            this is com.lagradost.cloudstream3.stremio.StremioAddonProvider ||
+            this is com.lagradost.cloudstream3.sky.SkyPluginProvider
+
     fun Context.getApiSettings(): HashSet<String> {
         val hashSet = HashSet<String>()
         val activeLangs = getApiProviderLangSettings()
         val hasUniversal = activeLangs.contains(AllLanguagesName)
-        hashSet.addAll(apis.filter { hasUniversal || activeLangs.contains(it.lang) }
+        hashSet.addAll(apis.filter { hasUniversal || activeLangs.contains(it.lang) || it.isLanguageAgnosticBridge() }
             .map { it.name })
         return hashSet
     }
@@ -469,7 +480,7 @@ object AppContextUtils {
         val langs = this.getApiProviderLangSettings()
         val hasUniversal = langs.contains(AllLanguagesName)
         val allApis =
-            apis.filter { api -> (hasUniversal || langs.contains(api.lang)) && (api.hasMainPage || !hasHomePageIsRequired) }
+            apis.filter { api -> (hasUniversal || langs.contains(api.lang) || api.isLanguageAgnosticBridge()) && (api.hasMainPage || !hasHomePageIsRequired) }
         return if (currentPrefMedia.isEmpty()) {
             allApis
         } else {

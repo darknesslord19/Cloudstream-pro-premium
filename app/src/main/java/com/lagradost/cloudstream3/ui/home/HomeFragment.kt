@@ -407,6 +407,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
             onCustomSelect: ((HomeCustomLists.CustomList) -> Unit)? = null,
             callback: (String) -> Unit
         ) {
+            // Re-check the Nuvio provider before listing: a TMDB key or
+            // scraper added since launch must show up without a restart.
+            runCatching {
+                com.lagradost.cloudstream3.nuvio.NuvioProviders.sync(this)
+            }
             val validAPIs = filterProviderByPreferredMedia().toMutableList()
 
             validAPIs.add(0, randomApi)
