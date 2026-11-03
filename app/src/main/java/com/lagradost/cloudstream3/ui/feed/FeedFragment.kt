@@ -843,15 +843,28 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(
             type == TvType.Anime || type == TvType.OVA
     }
 
+    /**
+     * Sorts by a key computed ONCE per item. Scores come from caches that
+     * other coroutines fill while a sort runs; reading them inside the
+     * comparator let the same item compare differently mid-sort, which
+     * crashed TimSort ("Comparison method violates its general contract").
+     * NaN keys are treated as unrated. Stable: ties keep pool order.
+     */
+    private inline fun sortDescByKey(
+        items: List<FeedEntry>,
+        key: (FeedEntry) -> Double,
+    ): List<FeedEntry> =
+        items.map { entry -> entry to key(entry).let { if (it.isNaN()) -1.0 else it } }
+            .sortedByDescending { it.second }
+            .map { it.first }
+
     /** Rating-descending order; unrated items sink to the end
      *  keeping pool order (the sort is stable). */
     private fun byRatingDesc(
         items: List<FeedEntry>,
         ratingsSnap: Map<String, String> = fragmentRatings
     ): List<FeedEntry> =
-        items.sortedWith(
-            compareByDescending { scoreOf(it, ratingsSnap) ?: -1.0 }
-        )
+        sortDescByKey(items) { scoreOf(it, ratingsSnap) ?: -1.0 }
 
     /**
      * A must-watch curation: the base set's high-rated items
@@ -868,7 +881,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(
             .filter {
                 (scoreOf(it, ratingsSnap) ?: 0.0) >= MUST_WATCH_MIN_SCORE
             }
-            .sortedByDescending { scoreOf(it, ratingsSnap) }
+            .let { list -> sortDescByKey(list) { scoreOf(it, ratingsSnap) ?: -1.0 } }
         return if (high.size >= ROW_MIN_ITEMS) high else base
     }
 
@@ -1468,9 +1481,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(
     private fun byProviderScoreDesc(
         items: List<FeedEntry>
     ): List<FeedEntry> =
-        items.sortedWith(
-            compareByDescending { providerScoreOf(it) ?: -1.0 }
-        )
+        sortDescByKey(items) { providerScoreOf(it) ?: -1.0 }
 
     /** Phase 8.96: must-watch from provider scores only (the
      *  phase-1 twin of mustWatchItems). */
@@ -1479,7 +1490,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(
             .filter {
                 (providerScoreOf(it) ?: 0.0) >= MUST_WATCH_MIN_SCORE
             }
-            .sortedByDescending { providerScoreOf(it) }
+            .let { list -> sortDescByKey(list) { providerScoreOf(it) ?: -1.0 } }
         return if (high.size >= ROW_MIN_ITEMS) high else base
     }
 

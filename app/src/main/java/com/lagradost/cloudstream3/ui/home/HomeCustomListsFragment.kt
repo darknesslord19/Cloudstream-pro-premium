@@ -40,13 +40,20 @@ class HomeCustomListsFragment : Fragment() {
         // title / name field from sliding under the status bar.
         val insetTarget = view
         val baseTop = insetTarget.paddingTop
+        val baseBottom = insetTarget.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(insetTarget) { v, insets ->
             val top = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars()
             ).top
+            // Keep the Save button above the system navigation bar and
+            // the keyboard (it used to sit hidden behind the nav buttons).
+            val bottom = maxOf(
+                insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom,
+                insets.getInsets(WindowInsetsCompat.Type.ime()).bottom,
+            )
             v.setPadding(
                 v.paddingLeft, baseTop + top,
-                v.paddingRight, v.paddingBottom
+                v.paddingRight, baseBottom + bottom
             )
             insets
         }

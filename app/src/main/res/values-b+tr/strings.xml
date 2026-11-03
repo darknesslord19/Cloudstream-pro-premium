@@ -991,4 +991,10 @@
     <string name="seek_fx_seconds_format">%1$d saniye</string>
     <string name="player_preload_buffer">Ön yükleme arabelleği</string>
     <string name="player_preload_buffer_des">Çevrimiçi izlerken videonun ne kadarının önceden indirileceği; bağlantı kopmalarında oynatmanın devam etmesini sağlar</string>
+    <string-array name="player_preload_buffer_entries">
+        <item>1 dakika</item>
+        <item>3 dakika</item>
+        <item>5 dakika</item>
+        <item>10 dakika</item>
+    </string-array>
 </resources>

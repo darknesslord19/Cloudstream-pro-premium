@@ -1227,10 +1227,14 @@ class CS3IPlayer : IPlayer {
                     DefaultLoadControl.Builder()
                         .setTargetBufferBytes(
                             if (cacheSize <= 0) {
-                                // Phase 8.59: default byte budget for
-                                // the read-ahead buffer (was: unset, so
-                                // only the 50 s time cap ruled).
-                                192 * 1024 * 1024
+                                // CloudStream Dark: the read-ahead buffer
+                                // lives on the Java heap, so a fixed 192 MB
+                                // could run low-RAM phones / TV sticks out
+                                // of memory. Use at most a third of the
+                                // heap, between 48 MB and 192 MB.
+                                (Runtime.getRuntime().maxMemory() / 3)
+                                    .coerceIn(48L * 1024 * 1024, 192L * 1024 * 1024)
+                                    .toInt()
                             } else {
                                 if (cacheSize > Int.MAX_VALUE) Int.MAX_VALUE else cacheSize.toInt()
                             }
@@ -1240,8 +1244,11 @@ class CS3IPlayer : IPlayer {
                         // ahead up to videoBufferMs, capped by bytes so
                         // low-RAM phones are not drowned.
                         .setPrioritizeTimeOverSizeThresholds(false)
+                        // 30 s rewind cache (was 90 s): instant short
+                        // rewinds without holding a minute and a half of
+                        // already-watched video in memory.
                         .setBackBuffer(
-                            90000,
+                            30000,
                             true
                         )
                         .setBufferDurationsMs(
@@ -1251,8 +1258,11 @@ class CS3IPlayer : IPlayer {
                             } else {
                                 videoBufferMs.toInt()
                             },
-                            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+                            // Start playback after 1.5 s buffered (default
+                            // 2.5 s) and resume after a stall at 3 s
+                            // (default 5 s): faster start, shorter stalls.
+                            1500,
+                            3000
                         ).build()
                 )
 
