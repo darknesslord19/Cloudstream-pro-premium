@@ -126,7 +126,18 @@ class FloatingNavView @JvmOverloads constructor(
     private val scrubThresholdPx = dp(8f).toFloat()
 
     private val inactiveTint = Color.rgb(150, 150, 150)
-    private val activeTint = Color.rgb(0xF5, 0xC5, 0x42) // CloudStream Dark gold
+    /** Theme colours: the accent (colorPrimary) marks the selected tab and
+     *  the bar itself uses the theme's card colour, so the bar follows
+     *  whichever theme is active. */
+    private fun themeColor(attr: Int, fallback: Int): Int {
+        val tv = TypedValue()
+        return if (context.theme.resolveAttribute(attr, tv, true)) {
+            if (tv.resourceId != 0) androidx.core.content.ContextCompat.getColor(context, tv.resourceId)
+            else tv.data
+        } else fallback
+    }
+    private val activeTint = themeColor(androidx.appcompat.R.attr.colorPrimary, Color.rgb(0xF5, 0xC5, 0x42))
+    private val barColor = themeColor(R.attr.primaryGrayBackground, Color.rgb(0x14, 0x14, 0x14))
 
     /** CloudStream Dark: icon-only bar unless the user turned labels on
      *  (Settings → Layout → "Bottom bar labels"). */
@@ -183,7 +194,12 @@ class FloatingNavView @JvmOverloads constructor(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             )
-            setBackgroundResource(R.drawable.bg_floating_nav_pill)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(40f).toFloat()
+                setColor(barColor)
+                setStroke(dp(1f), Color.argb(31, 255, 255, 255))
+            }
             setPadding(dp(6f), dp(6f), dp(6f), dp(6f))
             elevation = 0f
         }
@@ -365,7 +381,7 @@ class FloatingNavView @JvmOverloads constructor(
     private fun makeBlobBackground(): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            setColor(Color.argb(46, 0xF5, 0xC5, 0x42))
+            setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(activeTint, 46))
             cornerRadius = itemHeightPx / 2f
         }
     }

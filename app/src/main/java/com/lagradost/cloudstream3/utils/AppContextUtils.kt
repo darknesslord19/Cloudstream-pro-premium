@@ -385,8 +385,7 @@ object AppContextUtils {
 
     /** Flag shown next to a provider name. Bridge providers (Nuvio,
      *  Stremio, SkyStream) represent no country, so they get no flag
-     *  instead of the placeholder "en" (US) one; Nuvio rows show the
-     *  ic_nuvio_badge drawable instead. */
+     *  instead of the placeholder "en" (US) one. */
     fun MainAPI.displayFlag(): String? =
         if (isLanguageAgnosticBridge()) null
         else com.lagradost.cloudstream3.utils.SubtitleHelper.getFlagFromIso(lang)

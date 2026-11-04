@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0E0E0F"
+    android:background="?attr/primaryBlackBackground"
     android:orientation="vertical">
 
     <LinearLayout
@@ -31,7 +31,7 @@
             android:layout_marginStart="4dp"
             android:layout_weight="1"
             android:text="@string/home_custom_lists_header"
-            android:textColor="#F2F2F2"
+            android:textColor="?attr/textColor"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -39,7 +39,7 @@
             android:id="@+id/custom_lists_new"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:background="@drawable/bg_gold_pill_button"
+            android:background="@drawable/bg_accent_pill_button"
             android:drawablePadding="6dp"
             android:focusable="true"
             android:clickable="true"
@@ -47,11 +47,11 @@
             android:paddingStart="12dp"
             android:paddingEnd="16dp"
             android:text="@string/home_custom_new_short"
-            android:textColor="#141414"
+            android:textColor="?attr/colorOnPrimary"
             android:textSize="14sp"
             android:textStyle="bold"
             app:drawableStartCompat="@drawable/ic_baseline_add_24"
-            app:drawableTint="#141414" />
+            app:drawableTint="?attr/colorOnPrimary" />
     </LinearLayout>
 
     <TextView
@@ -63,7 +63,7 @@
         android:paddingEnd="20dp"
         android:paddingBottom="16dp"
         android:text="@string/home_custom_lists_desc"
-        android:textColor="#A1A1A6"
+        android:textColor="?attr/grayTextColor"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -84,14 +84,14 @@
             android:contentDescription="@null"
             android:padding="15dp"
             android:src="@drawable/ic_list_lines_24"
-            app:tint="#F5C542" />
+            app:tint="?attr/colorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="@string/home_custom_empty_title"
-            android:textColor="#F2F2F2"
+            android:textColor="?attr/textColor"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -102,7 +102,7 @@
             android:gravity="center"
             android:lineSpacingMultiplier="1.15"
             android:text="@string/home_custom_empty_desc"
-            android:textColor="#A1A1A6"
+            android:textColor="?attr/grayTextColor"
             android:textSize="14sp" />
     </LinearLayout>
 

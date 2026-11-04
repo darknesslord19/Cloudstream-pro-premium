@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    android:background="@drawable/bg_custom_list_card"
+    android:background="?attr/primaryGrayBackground"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -39,7 +39,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:singleLine="true"
-                android:textColor="#F2F2F2"
+                android:textColor="?attr/textColor"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -48,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:textColor="#A1A1A6"
+                android:textColor="?attr/grayTextColor"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -80,7 +80,7 @@
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:layout_marginTop="16dp"
-        android:background="@drawable/bg_gold_button"
+        android:background="@drawable/bg_accent_pill_button"
         android:clickable="true"
         android:drawablePadding="8dp"
         android:focusable="true"

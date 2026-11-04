@@ -12,6 +12,8 @@ import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.TextViewCompat
+import com.lagradost.cloudstream3.utils.UIHelper.toPx
+import com.lagradost.cloudstream3.utils.UIHelper.getResourceColor
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -167,31 +169,48 @@ class HomeCustomListsFragment : Fragment() {
                 list.entries.size,
                 list.entries.map { it.apiName }.distinct().size
             )
-            b.customRowCard.setBackgroundResource(
-                if (active) R.drawable.bg_custom_list_card_active
-                else R.drawable.bg_custom_list_card
-            )
-            b.customRowIcon.setBackgroundResource(
-                if (active) R.drawable.bg_custom_list_icon_active
-                else R.drawable.bg_custom_list_icon
-            )
+            val accent = ctx.getResourceColor(androidx.appcompat.R.attr.colorPrimary)
+            val onAccent = ctx.getResourceColor(com.google.android.material.R.attr.colorOnPrimary)
+            b.customRowCard.background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 20.toPx.toFloat()
+                setColor(ctx.getResourceColor(R.attr.primaryGrayBackground))
+                setStroke(
+                    1.toPx,
+                    if (active) androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 115)
+                    else Color.argb(26, 255, 255, 255)
+                )
+            }
+            b.customRowIcon.background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 12.toPx.toFloat()
+                setColor(
+                    if (active) androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 41)
+                    else Color.argb(20, 255, 255, 255)
+                )
+            }
             b.customRowIcon.imageTintList = ColorStateList.valueOf(
-                if (active) GOLD else Color.rgb(0xC7, 0xC7, 0xCC)
+                if (active) accent else Color.rgb(0xC7, 0xC7, 0xCC)
             )
             b.customRowUse.setText(
                 if (active) R.string.home_custom_in_use
                 else R.string.home_custom_use
             )
-            b.customRowUse.setBackgroundResource(
-                if (active) R.drawable.bg_gold_outline_button
-                else R.drawable.bg_gold_button
+            b.customRowUse.background = android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(Color.argb(51, 0, 0, 0)),
+                android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = 14.toPx.toFloat()
+                    if (active) {
+                        setColor(Color.TRANSPARENT)
+                        setStroke(1.toPx, androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 115))
+                    } else setColor(accent)
+                },
+                null
             )
-            b.customRowUse.setTextColor(if (active) GOLD else Color.rgb(0x14, 0x14, 0x14))
+            b.customRowUse.setTextColor(if (active) accent else onAccent)
             b.customRowUse.setCompoundDrawablesRelativeWithIntrinsicBounds(
                 if (active) R.drawable.ic_baseline_check_24 else 0, 0, 0, 0
             )
             TextViewCompat.setCompoundDrawableTintList(
-                b.customRowUse, ColorStateList.valueOf(GOLD)
+                b.customRowUse, ColorStateList.valueOf(accent)
             )
             b.customRowEdit.contentDescription =
                 ctx.getString(R.string.home_custom_edit) + ": " + list.name
@@ -202,8 +221,5 @@ class HomeCustomListsFragment : Fragment() {
             b.customRowDelete.setOnClickListener { onDelete(list) }
         }
 
-        companion object {
-            private val GOLD = Color.rgb(0xF5, 0xC5, 0x42)
-        }
     }
 }

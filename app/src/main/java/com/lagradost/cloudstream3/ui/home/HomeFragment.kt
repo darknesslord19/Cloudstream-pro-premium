@@ -751,10 +751,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             gravity = android.view.Gravity.CENTER
                             textSize = 16f
                             typeface = Typeface.DEFAULT_BOLD
-                            setTextColor(android.graphics.Color.rgb(0xF5, 0xC5, 0x42))
+                            setTextColor(ctx.getResourceColor(androidx.appcompat.R.attr.colorPrimary))
                             background = android.graphics.drawable.GradientDrawable().apply {
                                 cornerRadius = 8.toPx.toFloat()
-                                setColor(android.graphics.Color.argb(31, 0xF5, 0xC5, 0x42))
+                                setColor(
+                                    androidx.core.graphics.ColorUtils.setAlphaComponent(
+                                        ctx.getResourceColor(androidx.appcompat.R.attr.colorPrimary), 31
+                                    )
+                                )
                             }
                         }
                         val label = TextView(ctx).apply {
@@ -868,6 +872,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             R.drawable.ic_switcher_radio_unchecked
                         }
                     )
+                    // Selected radio takes the theme accent.
+                    rb.switcherRowRadio.imageTintList = if (row.selected) {
+                        android.content.res.ColorStateList.valueOf(
+                            rowContext.getResourceColor(androidx.appcompat.R.attr.colorPrimary)
+                        )
+                    } else null
                     rb.switcherRowTitle.text = row.title
                     rb.switcherRowSubtitle.text = row.subtitle ?: ""
                     rb.switcherRowSubtitle.visibility =
