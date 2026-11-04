@@ -1597,7 +1597,10 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             }
         } catch (t: Throwable) {
             showToast(txt(R.string.unable_to_inflate, t.message ?: ""), Toast.LENGTH_LONG)
-            null
+            // CloudStream Dark: without the layout the activity would only
+            // die a moment later on an unrelated NPE (NavHostFragment), and
+            // the crash log would lose the real cause. Crash here with it.
+            throw RuntimeException("activity_main inflation failed", t)
         }
 
         binding?.apply {
