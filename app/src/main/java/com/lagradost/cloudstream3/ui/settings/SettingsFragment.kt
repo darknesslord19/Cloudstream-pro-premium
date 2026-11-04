@@ -584,7 +584,7 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
 
             // Extensions has no PreferenceFragment sub-page (it is a custom
             // plugin-list screen), so its row keeps navigating as before.
-            // CloudStream Dark: the C / S / N / K tiles carry their own
+            // CloudStream Dark: the cloud / gem / leaf / moon glyphs carry their own
             // gold; the theme-wide compound-drawable tint would flatten
             // them, so drop it and re-tint only the trailing arrow.
             listOf(settingsExtensions, settingsStremioAddons, settingsNuvioPlugins, settingsSkyPlugins)

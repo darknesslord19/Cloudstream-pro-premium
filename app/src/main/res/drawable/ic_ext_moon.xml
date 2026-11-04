@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CloudStream Dark: SkyStream row icon (gold line glyph). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#00000000" android:strokeColor="#F5C542"
+        android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M19.5,14.6A8,8 0 1 1 9.4,4.5A6.4,6.4 0 0 0 19.5,14.6z" />
+    <path android:fillColor="#F5C542" android:pathData="M17.6,2.2Q18,5 20.8,5.4Q18,5.8 17.6,8.6Q17.2,5.8 14.4,5.4Q17.2,5 17.6,2.2z" />
+</vector>
