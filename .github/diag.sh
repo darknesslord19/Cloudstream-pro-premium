@@ -23,4 +23,6 @@ run() {
   adb shell am force-stop $PKG
 }
 run OkyanusDerinligi AmoledLight Normal -1
+run Turkuaz Monet Monet -1
+run DarknesAltin AmoledLight Normal 1
 exit 0
