@@ -18,16 +18,9 @@ run() {
   adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null
   sleep 18
   echo "===== RUN theme=$THEME app_theme=$APPT color=$PCOL layout=$LAYOUT ====="
-  adb logcat -d | grep -A40 "FATAL EXCEPTION" | grep -E "Exception|Caused by|at com\.lagradost|at com\.google\.android\.material|Failed to resolve|TypedValue" | head -40
+  adb logcat -d -s AndroidRuntime:E | grep -v "^\s*$" | grep -E "Caused by|Exception|Failed|TypedValue|at com\.google|at android\.content|at androidx" | tail -40
   adb shell dumpsys activity activities | grep -E "topResumedActivity" | head -1
   adb shell am force-stop $PKG
 }
 run OkyanusDerinligi AmoledLight Normal -1
-run OkyanusDerinligi Monet Monet -1
-run OkyanusDerinligi Black Normal -1
-run OkyanusDerinligi Dracula Lavender -1
-run Turkuaz AmoledLight Normal 0
-run KutupIsigi AmoledLight Normal 1
-run OkyanusDerinligi AmoledLight Normal 2
-run OkyanusDerinligi SilentBlue CoolBlue -1
 exit 0
