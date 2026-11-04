@@ -32,6 +32,7 @@ import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.databinding.FragmentLibraryBinding
+import com.lagradost.cloudstream3.utils.UIHelper.toPx
 import com.lagradost.cloudstream3.mvvm.Resource
 import com.lagradost.cloudstream3.mvvm.debugAssert
 import com.lagradost.cloudstream3.mvvm.observe
@@ -136,6 +137,23 @@ class LibraryFragment : BaseFragment<FragmentLibraryBinding>(
     ) {
         binding.sortFab.setOnClickListener(sortChangeClickListener)
         binding.librarySort.setOnClickListener(sortChangeClickListener)
+
+        // CloudStream Dark: keep the tab strip, list end and FABs above
+        // the floating bar's REAL height (incl. the system nav buttons).
+        with(com.lagradost.cloudstream3.ui.FloatingNavInsets) {
+            binding.libraryTabLayout.followFloatingNav { h ->
+                setBottomMarginPx(h + 12.toPx)
+            }
+            binding.viewpager.followFloatingNav { h ->
+                setBottomPaddingPx(h + 52.toPx)
+            }
+            binding.libraryFabHolder.followFloatingNav { h ->
+                setBottomMarginPx(h + 52.toPx)
+            }
+            binding.gridview.followFloatingNav { h ->
+                setBottomPaddingPx(h + 32.toPx)
+            }
+        }
 
         binding.libraryRoot.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
             ?.apply {

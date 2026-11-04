@@ -388,6 +388,7 @@
          Phase 8C: 138dp -> 150dp, tracking the queue bar's +12dp lift; the
          stack still rests on the queue bar's top edge as before. -->
     <LinearLayout
+        android:id="@+id/download_fab_stack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

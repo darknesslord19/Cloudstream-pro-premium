@@ -119,7 +119,10 @@ class FloatingNavView @JvmOverloads constructor(
     private val iconPx = dp(24f)
     private val itemPadPx = dp(13f)
     private val labelGapPx = dp(8f)
-    private val baseBottomLiftPx = dp(14f)
+    // CloudStream Dark: sits closer to the edge (was 14dp); the system
+    // navigation inset is still added on top, so it never covers the
+    // phone's own back/home buttons.
+    private val baseBottomLiftPx = dp(4f)
     private val scrubThresholdPx = dp(8f).toFloat()
 
     private val inactiveTint = Color.rgb(150, 150, 150)
@@ -280,7 +283,22 @@ class FloatingNavView @JvmOverloads constructor(
         }
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        publishHeight()
+    }
+
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        publishHeight()
+    }
+
+    private fun publishHeight() {
+        FloatingNavInsets.update(if (isShown && height > 0) height else 0)
+    }
+
     override fun onDetachedFromWindow() {
+        FloatingNavInsets.update(0)
         widthAnimator?.cancel()
         runCatching {
             androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)

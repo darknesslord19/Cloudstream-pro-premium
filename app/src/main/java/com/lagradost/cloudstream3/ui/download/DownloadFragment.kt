@@ -21,6 +21,7 @@ import androidx.fragment.app.activityViewModels
 import com.lagradost.cloudstream3.CommonActivity.showToast
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.databinding.FragmentDownloadsBinding
+import com.lagradost.cloudstream3.utils.UIHelper.toPx
 import com.lagradost.cloudstream3.databinding.StreamInputBinding
 import com.lagradost.cloudstream3.isEpisodeBased
 import com.lagradost.cloudstream3.mvvm.Resource
@@ -85,6 +86,19 @@ class DownloadFragment : BaseFragment<FragmentDownloadsBinding>(
 
     override fun onBindingCreated(binding: FragmentDownloadsBinding) {
         hideKeyboard()
+        // CloudStream Dark: queue bar, list end and FABs follow the
+        // floating bar's REAL height (incl. the system nav buttons).
+        with(com.lagradost.cloudstream3.ui.FloatingNavInsets) {
+            binding.downloadQueueButton.followFloatingNav { h ->
+                setBottomMarginPx(h + 12.toPx)
+            }
+            binding.downloadList.followFloatingNav { h ->
+                setBottomPaddingPx(h + 112.toPx)
+            }
+            binding.downloadFabStack.followFloatingNav { h ->
+                setBottomMarginPx(h + 70.toPx)
+            }
+        }
         binding.downloadAppbar.setAppBarNoScrollFlagsOnTV()
         binding.downloadDeleteAppbar.setAppBarNoScrollFlagsOnTV()
 

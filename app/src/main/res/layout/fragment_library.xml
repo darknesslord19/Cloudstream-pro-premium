@@ -168,6 +168,7 @@
          Phase 8C: 128dp -> 140dp, tracking the tab strip's +12dp lift so the
          FABs keep the same offset above the strip. -->
     <FrameLayout
+        android:id="@+id/library_fab_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="132dp">
