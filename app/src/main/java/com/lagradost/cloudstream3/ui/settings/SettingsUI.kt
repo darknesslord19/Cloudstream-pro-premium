@@ -189,6 +189,15 @@ class SettingsUI : BasePreferenceFragmentCompat() {
             }
             return@setOnPreferenceClickListener true
         }
+        findPreference<androidx.preference.Preference>(DarkThemePresets.PREF_KEY)?.apply {
+            summary = DarkThemePresets.current(requireContext())?.name
+                ?.let { getString(R.string.dark_theme_summary, it, DarkThemePresets.all.size) }
+                ?: getString(R.string.dark_theme_summary_none, DarkThemePresets.all.size)
+            setOnPreferenceClickListener {
+                activity?.let { DarkThemePresets.showPicker(it) }
+                true
+            }
+        }
         getPref(R.string.primary_color_key)?.setOnPreferenceClickListener {
             val prefNames = resources.getStringArray(R.array.themes_overlay_names).toMutableList()
             val prefValues =

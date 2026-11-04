@@ -1013,4 +1013,10 @@
     <string name="home_custom_in_use">Ana sayfada kullanılıyor</string>
     <string name="home_custom_empty_title">Henüz liste yok</string>
     <string name="home_custom_empty_desc">“Yeni liste” ile farklı sağlayıcılardan kategoriler seçip kendi ana sayfanı oluştur.</string>
+    <string name="dark_theme_title">Tema</string>
+    <string name="dark_theme_subtitle">%1$d tema · seçili: %2$s</string>
+    <string name="dark_theme_default">Varsayılan</string>
+    <string name="dark_theme_reset">Sıfırla</string>
+    <string name="dark_theme_summary">%1$s · %2$d tema</string>
+    <string name="dark_theme_summary_none">Varsayılan · %1$d tema</string>
 </resources>

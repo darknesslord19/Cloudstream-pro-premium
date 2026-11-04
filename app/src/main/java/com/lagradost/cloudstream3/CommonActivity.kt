@@ -404,6 +404,11 @@ object CommonActivity {
 
         act.theme.applyStyle(currentTheme, true)
         act.theme.applyStyle(currentOverlayTheme, true)
+        // CloudStream Dark: a full theme preset (backgrounds + cards +
+        // text + accent) wins over the app theme and primary colour.
+        com.lagradost.cloudstream3.ui.settings.DarkThemePresets.styleRes(act)
+            .takeIf { it != 0 }
+            ?.let { act.theme.applyStyle(it, true) }
         appliedTheme = currentTheme
         appliedColor = currentOverlayTheme
         act.updateTv()

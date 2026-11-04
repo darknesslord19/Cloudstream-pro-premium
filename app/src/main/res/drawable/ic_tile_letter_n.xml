@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CloudStream Dark: gold letter tile for extension rows. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp" android:height="28dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#24F5C542"
+        android:pathData="M5,0h14a5,5 0 0 1 5,5v14a5,5 0 0 1 -5,5H5a5,5 0 0 1 -5,-5V5a5,5 0 0 1 5,-5z" />
+    <path android:fillColor="#00000000" android:strokeColor="#F5C542"
+        android:strokeWidth="2.3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M8,16.8 L8,7.2 L16,16.8 L16,7.2" />
+</vector>

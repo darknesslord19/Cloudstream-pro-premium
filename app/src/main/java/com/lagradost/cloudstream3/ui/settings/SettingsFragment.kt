@@ -584,6 +584,17 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
 
             // Extensions has no PreferenceFragment sub-page (it is a custom
             // plugin-list screen), so its row keeps navigating as before.
+            // CloudStream Dark: the C / S / N / K tiles carry their own
+            // gold; the theme-wide compound-drawable tint would flatten
+            // them, so drop it and re-tint only the trailing arrow.
+            listOf(settingsExtensions, settingsStremioAddons, settingsNuvioPlugins, settingsSkyPlugins)
+                .forEach { row ->
+                    val arrowColor = androidx.core.widget.TextViewCompat.getCompoundDrawableTintList(row)
+                    androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(row, null)
+                    row.compoundDrawablesRelative[2]?.mutate()?.let { arrow ->
+                        arrowColor?.let { arrow.setTintList(it) }
+                    }
+                }
             settingsExtensions.setOnClickListener {
                 navigate(R.id.action_navigation_global_to_navigation_settings_extensions)
             }
