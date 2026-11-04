@@ -209,7 +209,7 @@
                     android:nextFocusUp="@id/settings_providers"
                     android:nextFocusDown="@id/settings_stremio_addons"
                     android:text="@string/extensions"
-                    app:drawableStartCompat="@drawable/ic_ext_cloud" />
+                    app:drawableStartCompat="@drawable/ic_ext_leaf" />
 
                 <View
                     android:layout_width="match_parent"
@@ -225,7 +225,7 @@
                     android:nextFocusUp="@id/settings_extensions"
                     android:nextFocusDown="@id/settings_nuvio_plugins"
                     android:text="@string/stremio_addons_title"
-                    app:drawableStartCompat="@drawable/ic_ext_gem" />
+                    app:drawableStartCompat="@drawable/ic_ext_leaf" />
 
                 <View
                     android:layout_width="match_parent"
@@ -257,7 +257,7 @@
                     android:nextFocusUp="@id/settings_nuvio_plugins"
                     android:nextFocusDown="@id/settings_categories"
                     android:text="@string/sky_plugins_title"
-                    app:drawableStartCompat="@drawable/ic_ext_moon" />
+                    app:drawableStartCompat="@drawable/ic_ext_leaf" />
 
                 <View
                     android:layout_width="match_parent"
