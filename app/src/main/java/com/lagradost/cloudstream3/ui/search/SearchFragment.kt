@@ -284,7 +284,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
 
     private fun styleTypeTabs() {
         typeTabViews.forEachIndexed { index, view ->
-            val selected = SearchTypeTab.entries[index] == selectedTypeTab
+            val selected = SearchTypeTab.entries.getOrNull(index) == selectedTypeTab
             if (selected) {
                 view.setBackgroundResource(R.drawable.feed_chip_selected)
                 view.setTextColor(
@@ -387,6 +387,10 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                 rightMargin = 12.toPx
             }
         }
+        // The fragment outlives its view: coming back with Back rebuilt
+        // the tabs while the old views were still listed (8 views for 4
+        // tabs) and styleTypeTabs crashed on index 4. Start fresh.
+        typeTabViews.clear()
         SearchTypeTab.entries.forEachIndexed { index, tab ->
             val chip = TextView(ctx).apply {
                 text = getString(
