@@ -702,6 +702,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         0, 0, 0
                     )
                     rb.switcherRowTitle.compoundDrawablePadding = 8.toPx
+                    // The theme tints compound drawables with the text
+                    // colour, which painted the whole badge flat grey.
+                    androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(
+                        rb.switcherRowTitle, null
+                    )
                     rb.switcherRowTitle.typeface = if (row.selected) {
                         Typeface.DEFAULT_BOLD
                     } else {
