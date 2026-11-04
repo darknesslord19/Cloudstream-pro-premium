@@ -1925,6 +1925,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             homeMasterRecycler.isVisible = true
                         }
                         homeLoadingError.isVisible = false
+                        homeSwipeRefresh.isInvisible = false
                         homeLoadingShimmer.stopShimmer()
                         homeSwipeRefresh.isRefreshing = false
 
@@ -1987,6 +1988,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         homeLoadingError.isVisible = true
                         homeMasterRecycler.isInvisible = true
                         homeSwipeRefresh.isRefreshing = false
+                        // The pull-to-refresh layer sits above the error
+                        // buttons and swallowed every tap on them; hide it
+                        // and raise the buttons while the error shows.
+                        homeSwipeRefresh.isInvisible = true
+                        homeLoadingError.bringToFront()
+                        homeLoadingError.translationZ = 8.toPx.toFloat()
 
                         // Based on https://github.com/recloudstream/cloudstream/pull/1438
                         val hasNoNetworkConnection = context?.isNetworkAvailable() == false
@@ -2019,6 +2026,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         homeLoadingShimmer.startShimmer()
                         homeLoading.isVisible = true
                         homeLoadingError.isVisible = false
+                        homeSwipeRefresh.isInvisible = false
                         homeMasterRecycler.isInvisible = true
                         (homeMasterRecycler.adapter as? ParentItemAdapter)?.apply {
                             submitList(null)
