@@ -160,7 +160,7 @@ android {
             if (signingConfigs.names.contains("dark")) {
                 signingConfig = signingConfigs.getByName("dark")
             }
-            isDebuggable = false
+            isDebuggable = true // DIAG ONLY
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
