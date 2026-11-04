@@ -577,6 +577,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
             val collapsedSections = (switcherPrefs.getStringSet(
                 "switcher_collapsed_sections", null
             ) ?: setOf("cloudstream", "nuvio", "stremio", "sky", "custom")).toMutableSet()
+            var lastToggledSection: String? = null
 
             fun updateList() {
                 DataStoreHelper.homePreference = preSelectedTypes
@@ -824,7 +825,17 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             "custom" -> "D"
                             else -> "C"
                         }
-                        anyHolder.chevron.rotation = if (row.headerCollapsed) 0f else 180f
+                        // Collapsed: points right; open: points down. Only the
+                        // header just tapped animates the turn.
+                        val targetRotation = if (row.headerCollapsed) -90f else 0f
+                        if (key == lastToggledSection) {
+                            lastToggledSection = null
+                            anyHolder.chevron.animate().rotation(targetRotation)
+                                .setDuration(200).start()
+                        } else {
+                            anyHolder.chevron.animate().cancel()
+                            anyHolder.chevron.rotation = targetRotation
+                        }
                         val firstHeader =
                             rows.indexOfFirst { it.headerKey != null } == position
                         if (firstHeader) {
@@ -833,6 +844,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             anyHolder.root.background = null
                         }
                         anyHolder.root.setOnClickListener {
+                            lastToggledSection = key
                             if (collapsedSections.contains(key)) {
                                 collapsedSections.remove(key)
                             } else {
