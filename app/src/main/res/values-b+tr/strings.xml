@@ -997,12 +997,12 @@
         <item>5 dakika</item>
         <item>10 dakika</item>
     </string-array>
-    <string name="switcher_section_cloudstream">CloudStream eklentileri</string>
+    <string name="switcher_section_cloudstream">CloudStream</string>
     <string name="switcher_section_pinned">Sabitlenenler</string>
     <string name="switcher_section_nuvio">Nuvio</string>
     <string name="switcher_section_stremio">Stremio</string>
     <string name="switcher_section_sky">SkyStream</string>
-    <string name="switcher_section_custom">Özel listeler</string>
+    <string name="switcher_section_custom">Darknes Listeler</string>
     <string name="switcher_nuvio_all">Tüm siteler</string>
     <string name="home_error_switch_provider">Sağlayıcı değiştir</string>
     <string name="home_error_retry">Tekrar dene</string>

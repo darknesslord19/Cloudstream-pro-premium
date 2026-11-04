@@ -490,7 +490,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
 
             class SwitcherHeaderHolder(
                 val root: LinearLayout,
-                val badge: ImageView,
+                val badge: TextView,
                 val label: TextView,
                 val count: TextView,
                 val chevron: ImageView,
@@ -576,7 +576,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
             val switcherPrefs = PreferenceManager.getDefaultSharedPreferences(this)
             val collapsedSections = (switcherPrefs.getStringSet(
                 "switcher_collapsed_sections", null
-            ) ?: setOf("nuvio")).toMutableSet()
+            ) ?: setOf("cloudstream", "nuvio", "stremio", "sky", "custom")).toMutableSet()
 
             fun updateList() {
                 DataStoreHelper.homePreference = preSelectedTypes
@@ -718,6 +718,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         selected = activeCustom?.id == custom.id,
                         pinned = pinnedphashset.contains("custom:" + custom.id),
                         settingsPlugin = null,
+                        subtitle = getString(
+                            R.string.home_custom_meta,
+                            custom.entries.size,
+                            custom.entries.map { it.apiName }.distinct().size
+                        ),
                     )
                 })
                 switcherAdapter.notifyDataSetChanged()
@@ -738,12 +743,21 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                 ): RecyclerView.ViewHolder {
                     if (viewType == 1) {
                         val ctx = parent.context
-                        val badge = ImageView(ctx).apply {
-                            layoutParams = LinearLayout.LayoutParams(20.toPx, 20.toPx)
-                                .apply { marginEnd = 10.toPx }
+                        // C / N / D letter tile (approved mockup).
+                        val badge = TextView(ctx).apply {
+                            layoutParams = LinearLayout.LayoutParams(28.toPx, 28.toPx)
+                                .apply { marginEnd = 14.toPx }
+                            gravity = android.view.Gravity.CENTER
+                            textSize = 16f
+                            typeface = Typeface.DEFAULT_BOLD
+                            setTextColor(android.graphics.Color.rgb(0xF5, 0xC5, 0x42))
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                cornerRadius = 8.toPx.toFloat()
+                                setColor(android.graphics.Color.argb(31, 0xF5, 0xC5, 0x42))
+                            }
                         }
                         val label = TextView(ctx).apply {
-                            textSize = 12f
+                            textSize = 13f
                             letterSpacing = 0.08f
                             typeface = Typeface.DEFAULT_BOLD
                             isAllCaps = true
@@ -764,7 +778,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         val root = LinearLayout(ctx).apply {
                             orientation = LinearLayout.HORIZONTAL
                             gravity = android.view.Gravity.CENTER_VERTICAL
-                            setPadding(20.toPx, 14.toPx, 16.toPx, 6.toPx)
+                            setPadding(20.toPx, 0, 16.toPx, 0)
+                            minimumHeight = 56.toPx
                             layoutParams = RecyclerView.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -801,10 +816,22 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             }
                         )
                         anyHolder.count.text = row.headerCount.toString()
-                        anyHolder.badge.visibility =
-                            if (key == "nuvio") View.VISIBLE else View.GONE
-                        if (key == "nuvio") anyHolder.badge.setImageResource(R.drawable.ic_nuvio_badge)
+                        anyHolder.badge.text = when (key) {
+                            "pinned" -> "★"
+                            "nuvio" -> "N"
+                            "stremio" -> "S"
+                            "sky" -> "K"
+                            "custom" -> "D"
+                            else -> "C"
+                        }
                         anyHolder.chevron.rotation = if (row.headerCollapsed) 0f else 180f
+                        val firstHeader =
+                            rows.indexOfFirst { it.headerKey != null } == position
+                        if (firstHeader) {
+                            anyHolder.root.setBackgroundResource(R.drawable.bg_switcher_first_header)
+                        } else {
+                            anyHolder.root.background = null
+                        }
                         anyHolder.root.setOnClickListener {
                             if (collapsedSections.contains(key)) {
                                 collapsedSections.remove(key)

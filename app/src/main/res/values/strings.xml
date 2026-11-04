@@ -677,12 +677,12 @@
     <string name="nuvio_check_title">Checking scrapers</string>
     <string name="nuvio_check_done">Check finished: %1$d load OK, %2$d broken</string>
     <string name="nuvio_repo_add_failed">Could not load that repository. Check the link and try again.</string>
-    <string name="switcher_section_cloudstream">CloudStream extensions</string>
+    <string name="switcher_section_cloudstream">CloudStream</string>
     <string name="switcher_section_pinned">Pinned</string>
     <string name="switcher_section_nuvio">Nuvio</string>
     <string name="switcher_section_stremio">Stremio</string>
     <string name="switcher_section_sky">SkyStream</string>
-    <string name="switcher_section_custom">Custom lists</string>
+    <string name="switcher_section_custom">Darknes Lists</string>
     <string name="switcher_nuvio_all">All sites</string>
     <string name="nav_show_labels">Bottom bar labels</string>
     <string name="nav_show_labels_des">Show the selected tab\'s name next to its icon. Off = icons only.</string>

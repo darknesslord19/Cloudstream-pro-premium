@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hairline above the first section header (separates Yok / Rastgele). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="top" android:height="1dp" android:left="22dp" android:right="22dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#2C2C2E" />
+        </shape>
+    </item>
+</layer-list>
