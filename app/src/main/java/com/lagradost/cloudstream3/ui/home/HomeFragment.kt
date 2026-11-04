@@ -476,10 +476,25 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                 val selected: Boolean,
                 val pinned: Boolean,
                 val settingsPlugin: Plugin?,
+                /** CloudStream Dark: small grey line under the name
+                 *  (the extension / repository it comes from). */
+                val subtitle: String? = null,
+                /** Non-null = a section header row, not a provider. */
+                val headerKey: String? = null,
+                val headerCount: Int = 0,
+                val headerCollapsed: Boolean = false,
             )
 
             class SwitcherHolder(val rowBinding: HomeProviderSwitcherRowBinding) :
                 RecyclerView.ViewHolder(rowBinding.root)
+
+            class SwitcherHeaderHolder(
+                val root: LinearLayout,
+                val badge: ImageView,
+                val label: TextView,
+                val count: TextView,
+                val chevron: ImageView,
+            ) : RecyclerView.ViewHolder(root)
 
             /** Repository display name for a downloaded native
              *  plugin: its file lives in a folder named after the
@@ -548,15 +563,20 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                 } else {
                     getDisplayName(api.name) ?: api.name
                 }
-                return if (isMultiLang) {
-                    "${with(com.lagradost.cloudstream3.utils.AppContextUtils) { api.displayFlag() }?.plus(" ") ?: ""}$base"
-                } else {
-                    base
+                // CloudStream Dark: no flags in the picker (sections and
+                // the subtitle line say where a provider comes from).
+                if (api is NuvioProvider && api.onlyScraper == null) {
+                    return getString(R.string.switcher_nuvio_all)
                 }
+                return base
             }
 
             val rows = mutableListOf<SwitcherRow>()
-            lateinit var switcherAdapter: RecyclerView.Adapter<SwitcherHolder>
+            lateinit var switcherAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>
+            val switcherPrefs = PreferenceManager.getDefaultSharedPreferences(this)
+            val collapsedSections = (switcherPrefs.getStringSet(
+                "switcher_collapsed_sections", null
+            ) ?: setOf("nuvio")).toMutableSet()
 
             fun updateList() {
                 DataStoreHelper.homePreference = preSelectedTypes
@@ -629,7 +649,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         }
 
                 rows.clear()
-                for (api in currentValidApis) {
+                fun providerRow(api: MainAPI): SwitcherRow {
                     val pluginInstance =
                         api.sourcePlugin?.let { PluginManager.plugins[it] } as? Plugin
                     val settingsPlugin =
@@ -638,19 +658,59 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         } else {
                             null
                         }
-                    rows += SwitcherRow(
+                    val subtitle = when {
+                        api is SkyPluginProvider && api.sub != null -> api.stored.name
+                        api.sourcePlugin != null -> repositoryTagFor(api)
+                        else -> null
+                    }
+                    return SwitcherRow(
                         api = api,
                         custom = null,
                         title = titleFor(api),
-                        tags = tagsFor(api),
+                        tags = emptyList(),
                         selected = activeCustom == null &&
                             api.name == currentApiName,
                         pinned = pinnedphashset.contains(api.name),
                         settingsPlugin = settingsPlugin,
+                        subtitle = subtitle,
                     )
                 }
-                for (custom in displayCustoms) {
+                fun section(key: String, items: List<SwitcherRow>) {
+                    if (items.isEmpty()) return
+                    // A section holding the current selection opens.
+                    val collapsed = collapsedSections.contains(key) &&
+                        items.none { it.selected }
                     rows += SwitcherRow(
+                        api = null, custom = null, title = "", tags = emptyList(),
+                        selected = false, pinned = false, settingsPlugin = null,
+                        headerKey = key, headerCount = items.size,
+                        headerCollapsed = collapsed,
+                    )
+                    if (!collapsed) rows += items
+                }
+                fun sectionOf(api: MainAPI): String = when (api) {
+                    is NuvioProvider -> "nuvio"
+                    is StremioAddonProvider -> "stremio"
+                    is SkyPluginProvider -> "sky"
+                    else -> "cloudstream"
+                }
+                // None / Random stay on top without a header.
+                currentValidApis.take(2).forEach { rows += providerRow(it) }
+                val rest = currentValidApis.drop(2)
+                section("pinned", rest.filter { pinnedphashset.contains(it.name) }
+                    .map { providerRow(it) })
+                val unpinned = rest.filterNot { pinnedphashset.contains(it.name) }
+                section("cloudstream", unpinned.filter { sectionOf(it) == "cloudstream" }
+                    .map { providerRow(it) })
+                section("nuvio", unpinned.filter { sectionOf(it) == "nuvio" }
+                    .sortedBy { if ((it as NuvioProvider).onlyScraper == null) 0 else 1 }
+                    .map { providerRow(it) })
+                section("stremio", unpinned.filter { sectionOf(it) == "stremio" }
+                    .map { providerRow(it) })
+                section("sky", unpinned.filter { sectionOf(it) == "sky" }
+                    .map { providerRow(it) })
+                section("custom", displayCustoms.map { custom ->
+                    SwitcherRow(
                         api = null,
                         custom = custom,
                         title = custom.name,
@@ -659,7 +719,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         pinned = pinnedphashset.contains("custom:" + custom.id),
                         settingsPlugin = null,
                     )
-                }
+                })
                 switcherAdapter.notifyDataSetChanged()
 
                 // Keep the All chip in sync with the tv-type chips.
@@ -668,11 +728,54 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         preSelectedTypes.containsAll(validTypesAll)
             }
 
-            switcherAdapter = object : RecyclerView.Adapter<SwitcherHolder>() {
+            switcherAdapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                override fun getItemViewType(position: Int): Int =
+                    if (rows[position].headerKey != null) 1 else 0
+
                 override fun onCreateViewHolder(
                     parent: ViewGroup,
                     viewType: Int
-                ): SwitcherHolder {
+                ): RecyclerView.ViewHolder {
+                    if (viewType == 1) {
+                        val ctx = parent.context
+                        val badge = ImageView(ctx).apply {
+                            layoutParams = LinearLayout.LayoutParams(20.toPx, 20.toPx)
+                                .apply { marginEnd = 10.toPx }
+                        }
+                        val label = TextView(ctx).apply {
+                            textSize = 12f
+                            letterSpacing = 0.08f
+                            typeface = Typeface.DEFAULT_BOLD
+                            isAllCaps = true
+                            setTextColor(ctx.getResourceColor(R.attr.grayTextColor))
+                        }
+                        val count = TextView(ctx).apply {
+                            textSize = 12f
+                            setTextColor(ctx.getResourceColor(R.attr.grayTextColor))
+                            layoutParams = LinearLayout.LayoutParams(
+                                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+                            ).apply { marginStart = 8.toPx }
+                        }
+                        val chevron = ImageView(ctx).apply {
+                            layoutParams = LinearLayout.LayoutParams(22.toPx, 22.toPx)
+                            setImageResource(R.drawable.ic_baseline_keyboard_arrow_down_24)
+                            setColorFilter(ctx.getResourceColor(R.attr.grayTextColor))
+                        }
+                        val root = LinearLayout(ctx).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = android.view.Gravity.CENTER_VERTICAL
+                            setPadding(20.toPx, 14.toPx, 16.toPx, 6.toPx)
+                            layoutParams = RecyclerView.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT
+                            )
+                            addView(badge)
+                            addView(label)
+                            addView(count)
+                            addView(chevron)
+                        }
+                        return SwitcherHeaderHolder(root, badge, label, count, chevron)
+                    }
                     val rowBinding = HomeProviderSwitcherRowBinding.inflate(
                         LayoutInflater.from(parent.context),
                         parent,
@@ -683,8 +786,39 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
 
                 override fun getItemCount(): Int = rows.size
 
-                override fun onBindViewHolder(holder: SwitcherHolder, position: Int) {
+                override fun onBindViewHolder(anyHolder: RecyclerView.ViewHolder, position: Int) {
                     val row = rows[position]
+                    if (anyHolder is SwitcherHeaderHolder) {
+                        val key = row.headerKey ?: return
+                        anyHolder.label.text = getString(
+                            when (key) {
+                                "pinned" -> R.string.switcher_section_pinned
+                                "nuvio" -> R.string.switcher_section_nuvio
+                                "stremio" -> R.string.switcher_section_stremio
+                                "sky" -> R.string.switcher_section_sky
+                                "custom" -> R.string.switcher_section_custom
+                                else -> R.string.switcher_section_cloudstream
+                            }
+                        )
+                        anyHolder.count.text = row.headerCount.toString()
+                        anyHolder.badge.visibility =
+                            if (key == "nuvio") View.VISIBLE else View.GONE
+                        if (key == "nuvio") anyHolder.badge.setImageResource(R.drawable.ic_nuvio_badge)
+                        anyHolder.chevron.rotation = if (row.headerCollapsed) 0f else 180f
+                        anyHolder.root.setOnClickListener {
+                            if (collapsedSections.contains(key)) {
+                                collapsedSections.remove(key)
+                            } else {
+                                collapsedSections.add(key)
+                            }
+                            switcherPrefs.edit().putStringSet(
+                                "switcher_collapsed_sections", collapsedSections.toSet()
+                            ).apply()
+                            updateList()
+                        }
+                        return
+                    }
+                    val holder = anyHolder as SwitcherHolder
                     val rb = holder.rowBinding
                     val rowContext = holder.itemView.context
 
@@ -696,17 +830,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                         }
                     )
                     rb.switcherRowTitle.text = row.title
-                    // Nuvio rows: gold "N" badge in front of the name.
-                    rb.switcherRowTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                        if (row.api is NuvioProvider) R.drawable.ic_nuvio_badge else 0,
-                        0, 0, 0
-                    )
-                    rb.switcherRowTitle.compoundDrawablePadding = 8.toPx
-                    // The theme tints compound drawables with the text
-                    // colour, which painted the whole badge flat grey.
-                    androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(
-                        rb.switcherRowTitle, null
-                    )
+                    rb.switcherRowSubtitle.text = row.subtitle ?: ""
+                    rb.switcherRowSubtitle.visibility =
+                        if (row.subtitle.isNullOrBlank()) View.GONE else View.VISIBLE
                     rb.switcherRowTitle.typeface = if (row.selected) {
                         Typeface.DEFAULT_BOLD
                     } else {
@@ -718,33 +844,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                             else R.attr.grayTextColor
                         )
                     )
-
-                    rb.switcherRowTags.removeAllViews()
-                    row.tags.forEachIndexed { index, tag ->
-                        val chip = TextView(rowContext).apply {
-                            text = tag.text
-                            textSize = 11f
-                            setTextColor(
-                                ContextCompat.getColor(
-                                    rowContext,
-                                    if (tag.cloud) R.color.switcherTagCloudText
-                                    else R.color.switcherTagText
-                                )
-                            )
-                            setBackgroundResource(
-                                if (tag.cloud) R.drawable.bg_switcher_tag_cloud
-                                else R.drawable.bg_switcher_tag
-                            )
-                            setPadding(8.toPx, 3.toPx, 8.toPx, 3.toPx)
-                            layoutParams = LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.WRAP_CONTENT,
-                                LinearLayout.LayoutParams.WRAP_CONTENT
-                            ).apply {
-                                if (index > 0) marginStart = 6.toPx
-                            }
-                        }
-                        rb.switcherRowTags.addView(chip)
-                    }
 
                     rb.switcherRowPin.visibility =
                         if (row.pinned) View.VISIBLE else View.GONE
