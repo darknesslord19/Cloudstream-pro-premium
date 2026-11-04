@@ -104,8 +104,37 @@ object DarkThemePresets {
     fun current(context: Context): Preset? =
         currentKey(context).let { k -> all.firstOrNull { it.key == k } }
 
+    /** Set while MainActivity starts with a preset, cleared on its first
+     *  onResume. Still set on the next launch = the last start with this
+     *  theme never got that far (crash), so the theme is switched off. */
+    private const val BOOT_PENDING_KEY = "dark_theme_boot_pending"
+
+    fun markBootStarted(context: Context) {
+        if (currentKey(context).isBlank()) return
+        PreferenceManager.getDefaultSharedPreferences(context).edit(commit = true) {
+            putBoolean(BOOT_PENDING_KEY, true)
+        }
+    }
+
+    fun markBootFinished(context: Context) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        if (prefs.getBoolean(BOOT_PENDING_KEY, false)) {
+            prefs.edit { putBoolean(BOOT_PENDING_KEY, false) }
+        }
+    }
+
     /** Style resource for the saved preset, or 0 when none is set. */
     fun styleRes(context: Context): Int {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        if (prefs.getBoolean(BOOT_PENDING_KEY, false)) {
+            // Recovery: the previous start with a preset never reached the
+            // home screen. Fall back to the default look.
+            prefs.edit(commit = true) {
+                putBoolean(BOOT_PENDING_KEY, false)
+                putString(PREF_KEY, "")
+            }
+            return 0
+        }
         val key = currentKey(context)
         if (key.isBlank() || all.none { it.key == key }) return 0
         return context.resources.getIdentifier(

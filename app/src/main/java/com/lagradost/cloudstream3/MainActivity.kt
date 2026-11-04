@@ -654,6 +654,13 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
 
     override fun onResume() {
         super.onResume()
+        // CloudStream Dark: the themed start counts as healthy once the
+        // home screen has stayed up for a few seconds.
+        window?.decorView?.postDelayed({
+            if (!isFinishing) {
+                com.lagradost.cloudstream3.ui.settings.DarkThemePresets.markBootFinished(this)
+            }
+        }, 5000)
         afterPluginsLoadedEvent += ::onAllPluginsLoaded
         setActivityInstance(this)
         try {
@@ -1471,6 +1478,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         MainAPI.settingsForProvider = settingsForProvider
 
         loadThemes(this)
+        com.lagradost.cloudstream3.ui.settings.DarkThemePresets.markBootStarted(this)
         enableEdgeToEdgeCompat()
         setNavigationBarColorCompat(R.attr.primaryGrayBackground)
         updateLocale()
