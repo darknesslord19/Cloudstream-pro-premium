@@ -1006,4 +1006,11 @@
     <string name="switcher_nuvio_all">Tüm siteler</string>
     <string name="home_error_switch_provider">Sağlayıcı değiştir</string>
     <string name="home_error_retry">Tekrar dene</string>
+    <string name="home_custom_lists_header">Özel Listeler</string>
+    <string name="home_custom_new_short">Yeni liste</string>
+    <string name="home_custom_lists_desc">Farklı sağlayıcıların kategorilerini tek bir ana sayfada birleştir. Aynı anda bir liste kullanılabilir.</string>
+    <string name="home_custom_meta">%1$d kategori · %2$d eklenti</string>
+    <string name="home_custom_in_use">Ana sayfada kullanılıyor</string>
+    <string name="home_custom_empty_title">Henüz liste yok</string>
+    <string name="home_custom_empty_desc">“Yeni liste” ile farklı sağlayıcılardan kategoriler seçip kendi ana sayfanı oluştur.</string>
 </resources>

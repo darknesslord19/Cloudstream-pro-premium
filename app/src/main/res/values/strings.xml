@@ -1036,4 +1036,11 @@
     <string name="player_preload_buffer_des">How much video to download ahead while watching online, so playback survives network drops</string>
     <string name="home_error_switch_provider">Switch provider</string>
     <string name="home_error_retry">Try again</string>
+    <string name="home_custom_lists_header">Custom lists</string>
+    <string name="home_custom_new_short">New list</string>
+    <string name="home_custom_lists_desc">Combine categories from different providers into one home page. One list can be used at a time.</string>
+    <string name="home_custom_meta">%1$d categories · %2$d extensions</string>
+    <string name="home_custom_in_use">In use on Home</string>
+    <string name="home_custom_empty_title">No lists yet</string>
+    <string name="home_custom_empty_desc">Use “New list” to pick categories from different providers and build your own home page.</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.lagradost.cloudstream3.ui.home
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +11,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -61,6 +64,9 @@ class HomeCustomListsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding?.customListsRecycler?.layoutManager =
             LinearLayoutManager(requireContext())
+        binding?.customListsBack?.setOnClickListener {
+            findNavController().navigateUp()
+        }
         binding?.customListsNew?.setOnClickListener {
             // No arguments: the destination's listId defaults to
             // null. (Passing an explicit null in a bundle crashed
@@ -152,23 +158,52 @@ class HomeCustomListsFragment : Fragment() {
             val list = lists[position]
             val b = holder.b
             val ctx = b.root.context
+            val active = list.id == activeId
             b.customRowName.text = list.name
-            val count = ctx.getString(
-                R.string.home_custom_count, list.entries.size
+            // "20 kategori · 5 eklenti": categories and the number of
+            // distinct providers (extensions) they come from.
+            b.customRowMeta.text = ctx.getString(
+                R.string.home_custom_meta,
+                list.entries.size,
+                list.entries.map { it.apiName }.distinct().size
             )
-            b.customRowMeta.text =
-                if (list.id == activeId) {
-                    count + " • " + ctx.getString(R.string.home_custom_active_badge)
-                } else {
-                    count
-                }
+            b.customRowCard.setBackgroundResource(
+                if (active) R.drawable.bg_custom_list_card_active
+                else R.drawable.bg_custom_list_card
+            )
+            b.customRowIcon.setBackgroundResource(
+                if (active) R.drawable.bg_custom_list_icon_active
+                else R.drawable.bg_custom_list_icon
+            )
+            b.customRowIcon.imageTintList = ColorStateList.valueOf(
+                if (active) GOLD else Color.rgb(0xC7, 0xC7, 0xCC)
+            )
             b.customRowUse.setText(
-                if (list.id == activeId) R.string.home_custom_stop
+                if (active) R.string.home_custom_in_use
                 else R.string.home_custom_use
             )
+            b.customRowUse.setBackgroundResource(
+                if (active) R.drawable.bg_gold_outline_button
+                else R.drawable.bg_gold_button
+            )
+            b.customRowUse.setTextColor(if (active) GOLD else Color.rgb(0x14, 0x14, 0x14))
+            b.customRowUse.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                if (active) R.drawable.ic_baseline_check_24 else 0, 0, 0, 0
+            )
+            TextViewCompat.setCompoundDrawableTintList(
+                b.customRowUse, ColorStateList.valueOf(GOLD)
+            )
+            b.customRowEdit.contentDescription =
+                ctx.getString(R.string.home_custom_edit) + ": " + list.name
+            b.customRowDelete.contentDescription =
+                ctx.getString(R.string.home_custom_delete) + ": " + list.name
             b.customRowEdit.setOnClickListener { onEdit(list) }
             b.customRowUse.setOnClickListener { onUse(list) }
             b.customRowDelete.setOnClickListener { onDelete(list) }
+        }
+
+        companion object {
+            private val GOLD = Color.rgb(0xF5, 0xC5, 0x42)
         }
     }
 }
