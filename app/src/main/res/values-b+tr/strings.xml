@@ -1004,4 +1004,6 @@
     <string name="switcher_section_sky">SkyStream</string>
     <string name="switcher_section_custom">Özel listeler</string>
     <string name="switcher_nuvio_all">Tüm siteler</string>
+    <string name="home_error_switch_provider">Sağlayıcı değiştir</string>
+    <string name="home_error_retry">Tekrar dene</string>
 </resources>

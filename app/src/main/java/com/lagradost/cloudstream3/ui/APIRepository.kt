@@ -153,6 +153,17 @@ class APIRepository(val api: MainAPI) {
         delay(delta)
     }
 
+    /** Runs one category's request; a failure becomes a Result instead
+     *  of cancelling its siblings. Cancellation (timeouts, leaving the
+     *  screen) still propagates. */
+    private inline fun <T> isolateCategory(block: () -> T): Result<T> = try {
+        Result.success(block())
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (t: Throwable) {
+        Result.failure(t)
+    }
+
     suspend fun getMainPage(page: Int, nameIndex: Int? = null): Resource<List<HomePageResponse?>> {
         return safeApiCall {
             withTimeout(getTimeout(api.getMainPageTimeoutMs)) {
@@ -166,30 +177,44 @@ class APIRepository(val api: MainAPI) {
                         )
                     )
                 } ?: run {
-                    if (api.sequentialMainPage) {
-                        var first = true
-                        api.mainPage.map { data ->
-                            if (!first) // dont want to sleep on first request
-                                delay(api.sequentialMainPageDelay)
-                            first = false
-
-                            api.getMainPage(
-                                page,
-                                MainPageRequest(data.name, data.data, data.horizontalImages)
-                            )
-                        }
-                    } else {
-                        with(CoroutineScope(coroutineContext)) {
+                    // CloudStream Dark: every category loads on its own.
+                    // One broken shelf (404, changed site) used to fail
+                    // the whole home page; now it is skipped and the
+                    // working shelves still show. Only when EVERY
+                    // category fails does the error reach the screen.
+                    val results: List<Result<HomePageResponse?>> =
+                        if (api.sequentialMainPage) {
+                            var first = true
                             api.mainPage.map { data ->
-                                async {
+                                if (!first) // dont want to sleep on first request
+                                    delay(api.sequentialMainPageDelay)
+                                first = false
+                                isolateCategory {
                                     api.getMainPage(
                                         page,
                                         MainPageRequest(data.name, data.data, data.horizontalImages)
                                     )
                                 }
-                            }.map { it.await() }
+                            }
+                        } else {
+                            with(CoroutineScope(coroutineContext)) {
+                                api.mainPage.map { data ->
+                                    async {
+                                        isolateCategory {
+                                            api.getMainPage(
+                                                page,
+                                                MainPageRequest(data.name, data.data, data.horizontalImages)
+                                            )
+                                        }
+                                    }
+                                }.map { it.await() }
+                            }
                         }
+                    if (results.isNotEmpty() && results.all { it.isFailure }) {
+                        throw results.first().exceptionOrNull()!!
                     }
+                    results.forEach { r -> r.exceptionOrNull()?.let { logError(it) } }
+                    results.map { it.getOrNull() }
                 }
             }
         }

@@ -1034,4 +1034,6 @@
     <string name="seek_fx_seconds_format">%1$d seconds</string>
     <string name="player_preload_buffer">Preload buffer</string>
     <string name="player_preload_buffer_des">How much video to download ahead while watching online, so playback survives network drops</string>
+    <string name="home_error_switch_provider">Switch provider</string>
+    <string name="home_error_retry">Try again</string>
 </resources>

@@ -1963,7 +1963,17 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                     //Open browser directly, without a menu.
                     is Resource.Failure -> {
                         homeLoadingShimmer.stopShimmer()
+                        // CloudStream Dark: the first button switches
+                        // provider (it always did, under a "Reconnect"
+                        // label); "Tekrar dene" really reloads.
                         homeReloadConnectionerror.setOnClickListener(apiChangeClickListener)
+                        homeReloadRetry.setOnClickListener {
+                            homeViewModel.loadAndCancel(
+                                homeViewModel.apiName.value ?: noneApi.name,
+                                forceReload = true,
+                                fromUI = true
+                            )
+                        }
                         homeReloadConnectionOpenInBrowser.setOnClickListener {
                             val currentApi = currentApiName?.let { getApiFromNameNull(it) }
                                 ?: homeViewModel.apiName.value?.let { getApiFromNameNull(it) }
