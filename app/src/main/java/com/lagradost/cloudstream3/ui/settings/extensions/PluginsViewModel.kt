@@ -151,6 +151,46 @@ class PluginsViewModel : ViewModel() {
     }
 
     /**
+     * CloudStream Dark: install (download) or remove many plugins at once.
+     * Already-in-state plugins are skipped; the list refreshes afterwards.
+     */
+    fun batchAction(
+        activity: Activity?,
+        repositories: List<RepositoryData>,
+        items: List<PluginWrapper>,
+        install: Boolean,
+    ) = ioSafe {
+        if (activity == null) return@ioSafe
+        val results = items.amap { wrapper ->
+            val file = getPluginPath(
+                activity, wrapper.plugin.internalName, wrapper.repositoryData.url
+            )
+            if (install) {
+                if (file.exists()) null else PluginManager.downloadPlugin(
+                    activity,
+                    wrapper.plugin.url,
+                    wrapper.plugin.fileHash,
+                    wrapper.plugin.internalName,
+                    wrapper.repositoryData.url,
+                    wrapper.plugin.status != PROVIDER_STATUS_DOWN
+                )
+            } else {
+                if (!file.exists()) null else PluginManager.deletePlugin(file)
+            }
+        }.filterNotNull()
+        main {
+            showToast(
+                txt(
+                    if (install) R.string.plugins_batch_installed else R.string.plugins_batch_removed,
+                    results.count { it }
+                ),
+                Toast.LENGTH_SHORT
+            )
+        }
+        updatePluginListPrivate(activity, repositories)
+    }
+
+    /**
      * @param isLocal defines if the plugin data is from local data instead of repo
      * Will only allow removal of plugins. Used for the local file management.
      * */

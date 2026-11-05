@@ -233,20 +233,20 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
         // TV/emulator use the rail and keep the XML geometry untouched
         // (the same pattern as BasePreferenceFragmentCompat's clearance).
         if (isLayout(PHONE)) {
-            val pillZone = 88.toPx
-            (binding.pluginStorageAppbar.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
-                lp.bottomMargin = pillZone
-                binding.pluginStorageAppbar.layoutParams = lp
-            }
-            // 8.81: the pager (which hosts both tab lists) takes the
-            // repo list's place in this lift; geometry is unchanged.
-            for (list in listOf(binding.extensionsPager, binding.pluginRecyclerView)) {
-                (list.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
-                    lp.bottomMargin += pillZone
-                    list.layoutParams = lp
+            // CloudStream Dark: follow the floating bar's REAL height (it
+            // grew when the bar was lifted above the system nav buttons), so
+            // the storage card always sits fully above it.
+            with(com.lagradost.cloudstream3.ui.FloatingNavInsets) {
+                binding.pluginStorageAppbar.followFloatingNav { h ->
+                    setBottomMarginPx(h + 8.toPx)
+                }
+                for (list in listOf(binding.extensionsPager, binding.pluginRecyclerView)) {
+                    list.followFloatingNav { h -> setBottomMarginPx(h + 88.toPx) }
+                }
+                binding.addRepoButton.followFloatingNav { h ->
+                    translationY = -(h + 88.toPx).toFloat()
                 }
             }
-            binding.addRepoButton.translationY = (-168).toPx.toFloat()
         }
 
         // 8.81: two tabs — Installed (page 0) and Repositories

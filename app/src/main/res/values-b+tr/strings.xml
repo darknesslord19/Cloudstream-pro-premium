@@ -1019,4 +1019,19 @@
     <string name="dark_theme_reset">Sıfırla</string>
     <string name="dark_theme_summary">%1$s · %2$d tema</string>
     <string name="dark_theme_summary_none">Varsayılan · %1$d tema</string>
+    <string name="plugins_summary_title" formatted="true">%d eklenti</string>
+    <string name="plugins_summary_sub" formatted="true">%1$d yüklü · %2$d yüklenmedi</string>
+    <string name="plugins_install_all">Hepsini yükle</string>
+    <string name="plugins_remove_all">Hepsini kaldır</string>
+    <string name="plugins_select_mode">Seç</string>
+    <string name="plugins_select_all">Tümünü seç</string>
+    <string name="plugins_selected_count" formatted="true">%d seçili</string>
+    <string name="plugins_install_selected">Seçilenleri yükle</string>
+    <string name="plugins_remove_selected">Seçilenleri kaldır</string>
+    <string name="plugins_batch_installed" formatted="true">%d eklenti yüklendi</string>
+    <string name="plugins_batch_removed" formatted="true">%d eklenti kaldırıldı</string>
+    <string name="plugins_nothing_to_install">Tüm eklentiler zaten yüklü</string>
+    <string name="plugins_nothing_to_remove">Yüklü eklenti yok</string>
+    <string name="plugins_remove_confirm_title">Eklentiler kaldırılsın mı?</string>
+    <string name="plugins_remove_confirm_message" formatted="true">%d eklenti kaldırılacak.</string>
 </resources>

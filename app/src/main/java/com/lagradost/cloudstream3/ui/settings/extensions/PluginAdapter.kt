@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import com.lagradost.cloudstream3.utils.UIHelper.getResourceColor
 import androidx.viewbinding.ViewBinding
 import coil3.request.transformations
 import coil3.transform.CircleCropTransformation
@@ -51,6 +52,30 @@ class PluginAdapter(
 ) : NoStateAdapter<PluginViewData>(diffCallback = BaseDiffCallback(itemSame = { a, b ->
     a.pluginWrapper.plugin.internalName == b.pluginWrapper.plugin.internalName && a.pluginWrapper.repositoryData.url == b.pluginWrapper.repositoryData.url
 })) {
+    /** CloudStream Dark: multi-select mode (bulk install / remove). */
+    var selectionMode = false
+        private set
+    val selectedKeys = linkedSetOf<String>()
+    var onSelectionChanged: (() -> Unit)? = null
+
+    fun keyOf(item: PluginViewData) =
+        item.pluginWrapper.repositoryData.url + "|" + item.pluginWrapper.plugin.internalName
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSelection(enabled: Boolean) {
+        selectionMode = enabled
+        selectedKeys.clear()
+        notifyDataSetChanged()
+        onSelectionChanged?.invoke()
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun selectAll(items: List<PluginViewData>, select: Boolean) {
+        selectedKeys.clear()
+        if (select) items.forEach { selectedKeys.add(keyOf(it)) }
+        notifyDataSetChanged()
+        onSelectionChanged?.invoke()
+    }
     override fun onCreateContent(parent: ViewGroup): ViewHolderState<Any> {
         val layout = if (isLayout(TV)) R.layout.repository_item_tv else R.layout.repository_item
         val inflated = LayoutInflater.from(parent.context).inflate(layout, parent, false)
@@ -102,7 +127,27 @@ class PluginAdapter(
         binding.actionButton.setOnClickListener {
             iconClickCallback.invoke(item.pluginWrapper)
         }
+        // Selection mode: a check box replaces the action icons and a tap
+        // toggles the row instead of opening the details sheet.
+        val key = keyOf(item)
+        val checked = selectionMode && selectedKeys.contains(key)
+        binding.selectCheck.isVisible = selectionMode
+        binding.selectCheck.setImageResource(
+            if (checked) R.drawable.ic_select_box_on else R.drawable.ic_select_box_off
+        )
+        binding.selectCheck.imageTintList = if (checked) {
+            android.content.res.ColorStateList.valueOf(
+                itemView.context.getResourceColor(androidx.appcompat.R.attr.colorPrimary)
+            )
+        } else null
+        binding.actionButton.isVisible = !selectionMode
         itemView.setOnClickListener {
+            if (selectionMode) {
+                if (!selectedKeys.add(key)) selectedKeys.remove(key)
+                notifyItemChanged(holder.bindingAdapterPosition)
+                onSelectionChanged?.invoke()
+                return@setOnClickListener
+            }
             if (isLocal) return@setOnClickListener
 
             val sheet = PluginDetailsFragment(item)
@@ -144,6 +189,7 @@ class PluginAdapter(
         } else {
             binding.actionSettings.isVisible = false
         }
+        if (selectionMode) binding.actionSettings.isVisible = false
 
         val url = metadata.iconUrl?.replace(
             "%size%",

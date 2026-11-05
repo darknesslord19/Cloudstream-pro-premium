@@ -18,6 +18,12 @@
         android:title="@string/provider_lang_settings"
         app:showAsAction="collapseActionView|ifRoom" />
     <item
+        android:id="@+id/select_all"
+        android:icon="@drawable/ic_bulk_select_all"
+        android:title="@string/plugins_select_all"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/download_all"
         android:icon="@drawable/netflix_download"
         android:title="@string/batch_download"

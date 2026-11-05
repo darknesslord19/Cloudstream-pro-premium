@@ -37,6 +37,87 @@
                 android:id="@+id/tvtypes_chips_scroll"
                 layout="@layout/tvtypes_chips_scroll" />
         </FrameLayout>
+
+        <!-- CloudStream Dark: summary + bulk actions (approved mockup) -->
+        <LinearLayout
+            android:id="@+id/plugin_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_plugin_summary"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="10dp"
+            android:visibility="gone"
+            app:layout_scrollFlags="scroll|enterAlways"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/plugin_summary_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/textColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="34 eklenti" />
+
+                <TextView
+                    android:id="@+id/plugin_summary_sub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/grayTextColor"
+                    android:textSize="12.5sp"
+                    tools:text="12 yüklü · 22 yüklenmedi" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/plugin_install_all"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_bulk_icon_accent"
+                android:contentDescription="@string/plugins_install_all"
+                android:tooltipText="@string/plugins_install_all"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_bulk_install"
+                app:tint="?attr/iconColor" />
+            <ImageButton
+                android:id="@+id/plugin_remove_all"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_bulk_icon_outline"
+                android:contentDescription="@string/plugins_remove_all"
+                android:tooltipText="@string/plugins_remove_all"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_bulk_remove"
+                app:tint="?attr/iconColor" />
+            <ImageButton
+                android:id="@+id/plugin_select_mode"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_bulk_icon_outline"
+                android:contentDescription="@string/plugins_select_mode"
+                android:tooltipText="@string/plugins_select_mode"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_bulk_select"
+                app:tint="?attr/iconColor" />
+        </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Phase 8.10: paddingBottom gives the last plugin rows the same
@@ -57,6 +138,103 @@
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:listitem="@layout/repository_item" />
+
+    <!-- CloudStream Dark: selection-mode action pill (install / remove the
+         selected plugins), kept above the floating bottom bar. -->
+    <LinearLayout
+        android:id="@+id/plugin_selection_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="110dp"
+        android:background="@drawable/bg_selection_pill"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <FrameLayout
+            android:id="@+id/plugin_sel_install"
+            android:layout_width="56dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_bulk_pill_accent"
+            android:clickable="true"
+            android:contentDescription="@string/plugins_install_selected"
+            android:focusable="true"
+            android:tooltipText="@string/plugins_install_selected">
+
+            <ImageView
+                android:id="@+id/plugin_sel_install_icon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_bulk_install"
+                app:tint="?attr/colorOnPrimary" />
+
+            <TextView
+                android:id="@+id/plugin_sel_install_count"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/bg_count_badge_dark"
+                android:gravity="center"
+                android:minWidth="18dp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:textColor="?attr/colorPrimary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="2" />
+        </FrameLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:background="#1FFFFFFF" />
+
+        <FrameLayout
+            android:id="@+id/plugin_sel_remove"
+            android:layout_width="56dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/plugins_remove_selected"
+            android:focusable="true"
+            android:tooltipText="@string/plugins_remove_selected">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_baseline_delete_outline_24"
+                app:tint="?attr/textColor" />
+
+            <TextView
+                android:id="@+id/plugin_sel_remove_count"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/bg_count_badge_accent"
+                android:gravity="center"
+                android:minWidth="18dp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="1" />
+        </FrameLayout>
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

@@ -15,6 +15,16 @@
     android:padding="14dp">
 
     <ImageView
+        android:id="@+id/select_check"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginEnd="14dp"
+        android:contentDescription="@null"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_select_box_off" />
+
+    <ImageView
         android:id="@+id/entry_icon"
         android:layout_width="32dp"
         android:layout_height="32dp"

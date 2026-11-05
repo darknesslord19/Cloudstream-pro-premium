@@ -28,6 +28,8 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
 import com.lagradost.cloudstream3.utils.SubtitleHelper.getNameNextToFlagEmoji
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
+import com.lagradost.cloudstream3.utils.UIHelper.getResourceColor
+import com.lagradost.cloudstream3.CommonActivity.showToast
 
 const val PLUGINS_BUNDLE_DATA = "data"
 const val PLUGINS_BUNDLE_LOCAL = "isLocal"
@@ -79,6 +81,14 @@ class PluginsFragment : BaseFragment<FragmentPluginsBinding>(
         binding.settingsToolbar.apply {
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem?.itemId) {
+                    R.id.select_all -> {
+                        val adapter = binding.pluginRecyclerView.adapter as? PluginAdapter
+                        if (adapter != null) {
+                            val all = currentPlugins
+                            adapter.selectAll(all, adapter.selectedKeys.size != all.size)
+                        }
+                    }
+
                     R.id.download_all -> {
                         PluginsViewModel.downloadAll(activity, repositoryData, pluginViewModel)
                     }
@@ -127,7 +137,10 @@ class PluginsFragment : BaseFragment<FragmentPluginsBinding>(
 
             // Don't go back if active query
             setNavigationOnClickListener {
-                if (searchView?.isIconified == false) {
+                val adapter = binding.pluginRecyclerView.adapter as? PluginAdapter
+                if (adapter?.selectionMode == true) {
+                    adapter.setSelection(false)
+                } else if (searchView?.isIconified == false) {
                     searchView.isIconified = true
                 } else {
                     dispatchBackPressed()
@@ -170,8 +183,12 @@ class PluginsFragment : BaseFragment<FragmentPluginsBinding>(
             binding.pluginRecyclerView.setPadding(0, 0, 0, 200.toPx)
         }
 
+        setupBulkActions(binding, repositoryData, isLocal)
+
         observe(pluginViewModel.filteredPlugins) { (scrollToTop, list) ->
+            currentPlugins = list
             (binding.pluginRecyclerView.adapter as? PluginAdapter)?.submitList(list)
+            updateBulkUi(binding)
             if (scrollToTop) {
                 binding.pluginRecyclerView.scrollToPosition(0)
             }
@@ -202,6 +219,134 @@ class PluginsFragment : BaseFragment<FragmentPluginsBinding>(
                 nextFocusDown = R.id.plugin_recycler_view,
                 nextFocusUp = null,
             )
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // CloudStream Dark: bulk install / remove (approved icon mockup)
+    // ---------------------------------------------------------------
+    private var currentPlugins: List<PluginViewData> = emptyList()
+
+    private fun setupBulkActions(
+        binding: FragmentPluginsBinding,
+        repositoryData: RepositoryData,
+        isLocal: Boolean,
+    ) {
+        val adapter = binding.pluginRecyclerView.adapter as? PluginAdapter ?: return
+        val repos = listOf(repositoryData)
+        binding.pluginSummary.isVisible = !isLayout(TV or EMULATOR)
+        binding.pluginInstallAll.isVisible = !isLocal
+        // Icon on the accent tile uses the colour meant for text on accent.
+        binding.pluginInstallAll.imageTintList = android.content.res.ColorStateList.valueOf(
+            requireContext().getResourceColor(com.google.android.material.R.attr.colorOnPrimary)
+        )
+
+        binding.pluginInstallAll.setOnClickListener {
+            val todo = currentPlugins.filter { !it.isDownloaded }.map { it.pluginWrapper }
+            if (todo.isEmpty()) {
+                showToast(R.string.plugins_nothing_to_install)
+                return@setOnClickListener
+            }
+            pluginViewModel.batchAction(activity, repos, todo, install = true)
+        }
+        binding.pluginRemoveAll.setOnClickListener {
+            val todo = currentPlugins.filter { it.isDownloaded }.map { it.pluginWrapper }
+            if (todo.isEmpty()) {
+                showToast(R.string.plugins_nothing_to_remove)
+                return@setOnClickListener
+            }
+            confirmRemove(todo.size) {
+                pluginViewModel.batchAction(activity, repos, todo, install = false)
+            }
+        }
+        binding.pluginSelectMode.setOnClickListener { adapter.setSelection(true) }
+
+        binding.pluginSelInstall.setOnClickListener {
+            val todo = selectedItems(adapter).filter { !it.isDownloaded }.map { it.pluginWrapper }
+            if (todo.isEmpty()) return@setOnClickListener
+            pluginViewModel.batchAction(activity, repos, todo, install = true)
+            adapter.setSelection(false)
+        }
+        binding.pluginSelRemove.setOnClickListener {
+            val todo = selectedItems(adapter).filter { it.isDownloaded }.map { it.pluginWrapper }
+            if (todo.isEmpty()) return@setOnClickListener
+            confirmRemove(todo.size) {
+                pluginViewModel.batchAction(activity, repos, todo, install = false)
+                adapter.setSelection(false)
+            }
+        }
+        adapter.onSelectionChanged = { updateBulkUi(binding) }
+
+        // System back leaves selection mode first.
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : androidx.activity.OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() {
+                    adapter.setSelection(false)
+                }
+            }.also { cb -> selectionBackCallback = cb }
+        )
+
+        with(com.lagradost.cloudstream3.ui.FloatingNavInsets) {
+            binding.pluginSelectionBar.followFloatingNav { h ->
+                setBottomMarginPx(h + 12.toPx)
+            }
+        }
+    }
+
+    private var selectionBackCallback: androidx.activity.OnBackPressedCallback? = null
+
+    private fun selectedItems(adapter: PluginAdapter) =
+        currentPlugins.filter { adapter.selectedKeys.contains(adapter.keyOf(it)) }
+
+    private fun confirmRemove(count: Int, onYes: () -> Unit) {
+        val ctx = context ?: return
+        androidx.appcompat.app.AlertDialog.Builder(ctx, R.style.AlertDialogCustom)
+            .setTitle(R.string.plugins_remove_confirm_title)
+            .setMessage(getString(R.string.plugins_remove_confirm_message, count))
+            .setPositiveButton(R.string.delete) { _, _ -> onYes() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun updateBulkUi(binding: FragmentPluginsBinding) {
+        val adapter = binding.pluginRecyclerView.adapter as? PluginAdapter ?: return
+        val total = currentPlugins.size
+        val installed = currentPlugins.count { it.isDownloaded }
+        binding.pluginSummaryTitle.text = getString(R.string.plugins_summary_title, total)
+        binding.pluginSummarySub.text =
+            getString(R.string.plugins_summary_sub, installed, total - installed)
+
+        val selecting = adapter.selectionMode
+        val menu = binding.settingsToolbar.menu
+        menu?.findItem(R.id.select_all)?.isVisible = selecting
+        menu?.findItem(R.id.search_button)?.isVisible = !selecting
+        menu?.findItem(R.id.lang_filter)?.isVisible =
+            !selecting && arguments?.getBoolean(PLUGINS_BUNDLE_LOCAL) != true
+        selectionBackCallback?.isEnabled = selecting
+        binding.pluginSelectionBar.isVisible = selecting
+        binding.pluginSummary.isVisible = !selecting && !isLayout(TV or EMULATOR)
+        if (selecting) {
+            binding.settingsToolbar.title =
+                getString(R.string.plugins_selected_count, adapter.selectedKeys.size)
+            binding.settingsToolbar.setNavigationIcon(R.drawable.ic_baseline_close_24)
+            val sel = selectedItems(adapter)
+            val toInstall = sel.count { !it.isDownloaded }
+            val toRemove = sel.count { it.isDownloaded }
+            binding.pluginSelInstallCount.text = toInstall.toString()
+            binding.pluginSelRemoveCount.text = toRemove.toString()
+            binding.pluginSelInstall.alpha = if (toInstall > 0) 1f else 0.4f
+            binding.pluginSelRemove.alpha = if (toRemove > 0) 1f else 0.4f
+            val allSelected = adapter.selectedKeys.size == total && total > 0
+            menu?.findItem(R.id.select_all)?.icon?.mutate()?.setTint(
+                requireContext().getResourceColor(
+                    if (allSelected) androidx.appcompat.R.attr.colorPrimary else R.attr.iconColor
+                )
+            )
+        } else {
+            arguments?.getString(PLUGINS_BUNDLE_DATA)?.let { tryParseJson<RepositoryData>(it) }
+                ?.let { binding.settingsToolbar.title = it.name }
+            binding.settingsToolbar.setNavigationIcon(R.drawable.ic_baseline_arrow_back_24)
         }
     }
 

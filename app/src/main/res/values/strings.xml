@@ -1049,4 +1049,19 @@
     <string name="dark_theme_reset">Reset</string>
     <string name="dark_theme_summary">%1$s · %2$d themes</string>
     <string name="dark_theme_summary_none">Default · %1$d themes</string>
+    <string name="plugins_summary_title" formatted="true">%d plugins</string>
+    <string name="plugins_summary_sub" formatted="true">%1$d installed · %2$d not installed</string>
+    <string name="plugins_install_all">Install all</string>
+    <string name="plugins_remove_all">Remove all</string>
+    <string name="plugins_select_mode">Select</string>
+    <string name="plugins_select_all">Select all</string>
+    <string name="plugins_selected_count" formatted="true">%d selected</string>
+    <string name="plugins_install_selected">Install selected</string>
+    <string name="plugins_remove_selected">Remove selected</string>
+    <string name="plugins_batch_installed" formatted="true">%d plugins installed</string>
+    <string name="plugins_batch_removed" formatted="true">%d plugins removed</string>
+    <string name="plugins_nothing_to_install">All plugins are already installed</string>
+    <string name="plugins_nothing_to_remove">No installed plugins</string>
+    <string name="plugins_remove_confirm_title">Remove plugins?</string>
+    <string name="plugins_remove_confirm_message" formatted="true">%d plugins will be removed.</string>
 </resources>
