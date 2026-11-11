@@ -59,7 +59,10 @@ class RepoAdapter(
                     // Only shows icon if on setup or if it isn't a prebuilt repo.
                     // No delete buttons on prebuilt repos.
                     if (!isPrebuilt || isSetup) {
-                        actionButton.setImageResource(drawable)
+                        actionButton.setImageResource(
+                            if (!isSetup && com.lagradost.cloudstream3.plugins.AdminRepos.isLocked(item.url))
+                                R.drawable.ic_admin_lock else drawable
+                        )
                     }
 
                     actionButton.setOnClickListener {
@@ -97,7 +100,10 @@ class RepoAdapter(
                     // Only shows icon if on setup or if it isn't a prebuilt repo.
                     // No delete buttons on prebuilt repos.
                     if (!isPrebuilt || isSetup) {
-                        actionButton.setImageResource(drawable)
+                        actionButton.setImageResource(
+                            if (!isSetup && com.lagradost.cloudstream3.plugins.AdminRepos.isLocked(item.url))
+                                R.drawable.ic_admin_lock else drawable
+                        )
                     }
 
                     actionButton.setOnClickListener {

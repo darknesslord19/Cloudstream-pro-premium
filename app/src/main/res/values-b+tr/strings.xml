@@ -1034,4 +1034,5 @@
     <string name="plugins_nothing_to_remove">Yüklü eklenti yok</string>
     <string name="plugins_remove_confirm_title">Eklentiler kaldırılsın mı?</string>
     <string name="plugins_remove_confirm_message" formatted="true">%d eklenti kaldırılacak.</string>
+    <string name="admin_repo_locked">Admin tarafından eklendi, silinemez</string>
 </resources>

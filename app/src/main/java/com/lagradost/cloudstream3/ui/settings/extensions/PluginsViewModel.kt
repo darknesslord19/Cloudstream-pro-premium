@@ -14,6 +14,7 @@ import com.lagradost.cloudstream3.PROVIDER_STATUS_DOWN
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.amap
+import com.lagradost.cloudstream3.plugins.AdminRepos
 import com.lagradost.cloudstream3.mvvm.launchSafe
 import com.lagradost.cloudstream3.plugins.PluginManager
 import com.lagradost.cloudstream3.plugins.PluginManager.getPluginPath
@@ -161,6 +162,7 @@ class PluginsViewModel : ViewModel() {
         install: Boolean,
     ) = ioSafe {
         if (activity == null) return@ioSafe
+        var lockedSkipped = false
         val results = items.amap { wrapper ->
             val file = getPluginPath(
                 activity, wrapper.plugin.internalName, wrapper.repositoryData.url
@@ -175,9 +177,13 @@ class PluginsViewModel : ViewModel() {
                     wrapper.plugin.status != PROVIDER_STATUS_DOWN
                 )
             } else {
-                if (!file.exists()) null else PluginManager.deletePlugin(file)
+                if (!file.exists()) null
+                else if (AdminRepos.isLocked(wrapper.repositoryData.url)) {
+                    lockedSkipped = true; null
+                } else PluginManager.deletePlugin(file)
             }
         }.filterNotNull()
+        if (lockedSkipped) AdminRepos.showLockedToast() else
         main {
             showToast(
                 txt(
@@ -211,6 +217,10 @@ class PluginsViewModel : ViewModel() {
             pluginWrapper.repositoryData.url
         )
 
+        if (file.exists() && (AdminRepos.isLocked(repositoryData.url) || AdminRepos.isLockedFile(activity, file))) {
+            AdminRepos.showLockedToast()
+            return@ioSafe
+        }
         val (success, message) = if (file.exists()) {
             PluginManager.deletePlugin(file) to R.string.plugin_deleted
         } else {

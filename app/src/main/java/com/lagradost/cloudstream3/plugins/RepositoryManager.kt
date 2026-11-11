@@ -257,6 +257,10 @@ object RepositoryManager {
      * Also deletes downloaded repository plugins
      */
     suspend fun removeRepository(context: Context, repository: RepositoryData) {
+        if (AdminRepos.isLocked(repository.url)) {
+            AdminRepos.showLockedToast()
+            return
+        }
         val extensionsDir = File(context.filesDir, ONLINE_PLUGINS_FOLDER)
 
         repoLock.withLock {

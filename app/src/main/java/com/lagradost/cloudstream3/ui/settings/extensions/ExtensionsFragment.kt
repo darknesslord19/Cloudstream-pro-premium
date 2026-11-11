@@ -136,6 +136,10 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
                     PluginsFragment.newInstance(it)
                 )
             }, { repo ->
+                // CloudStream Dark: admin-locked repos cannot be removed.
+                if (com.lagradost.cloudstream3.plugins.AdminRepos.isLocked(repo.url)) {
+                    com.lagradost.cloudstream3.plugins.AdminRepos.showLockedToast()
+                } else
                 // Prompt user before deleting repo
                 main {
                     val uiContext = context ?: fragmentBinding.root.context

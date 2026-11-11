@@ -90,7 +90,9 @@ class ExtensionsViewModel : ViewModel() {
         ?: emptyArray()) + PREBUILT_REPOSITORIES
 
     fun loadRepositories() {
-        val urls = repos()
+        // CloudStream Dark: admin-locked repos are pinned to the top.
+        val locked = com.lagradost.cloudstream3.plugins.AdminRepos.lockedRepoUrls()
+        val urls = repos().sortedByDescending { locked.contains(it.url) }.toTypedArray()
         _repositories.postValue(urls)
     }
 }

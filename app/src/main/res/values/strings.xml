@@ -1064,4 +1064,5 @@
     <string name="plugins_nothing_to_remove">No installed plugins</string>
     <string name="plugins_remove_confirm_title">Remove plugins?</string>
     <string name="plugins_remove_confirm_message" formatted="true">%d plugins will be removed.</string>
+    <string name="admin_repo_locked">Added by admin — cannot be removed</string>
 </resources>
