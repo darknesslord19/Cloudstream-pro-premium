@@ -1711,6 +1711,10 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                             autoDownloadPlugin
                         )
                     }
+
+                    // CloudStream Dark: admin repository list (Firebase) —
+                    // listed repos are added and their plugins installed.
+                    com.lagradost.cloudstream3.plugins.AdminRepos.sync(this@MainActivity)
                 }
 
                 ioSafe {
