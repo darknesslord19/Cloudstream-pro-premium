@@ -1065,4 +1065,53 @@
     <string name="plugins_remove_confirm_title">Remove plugins?</string>
     <string name="plugins_remove_confirm_message" formatted="true">%d plugins will be removed.</string>
     <string name="admin_repo_locked">Added by admin — cannot be removed</string>
+    <string name="domain_title">Plugin addresses</string>
+    <string name="domain_settings_sub">Change or find moved plugin domains</string>
+    <string name="domain_filter_all" formatted="true">All · %d</string>
+    <string name="domain_filter_changed" formatted="true">Changed · %d</string>
+    <string name="domain_summary_title" formatted="true">%d plugin addresses</string>
+    <string name="domain_summary_sub" formatted="true">%d changed by you</string>
+    <string name="domain_scanning">Scanning addresses…</string>
+    <string name="domain_scanning_sub">Trying redirects, numbers, extensions and the admin list</string>
+    <string name="domain_found_title" formatted="true">%d new addresses found</string>
+    <string name="domain_scan_done">Scan finished</string>
+    <string name="domain_scan">Find moved addresses</string>
+    <string name="domain_apply_all">Apply all found</string>
+    <string name="domain_reset_all">Reset all to default</string>
+    <string name="domain_auto_title">Check addresses on start</string>
+    <string name="domain_auto_sub">Looks for a new address when a plugin cannot be reached</string>
+    <string name="domain_changed_badge">CHANGED</string>
+    <string name="domain_status_ok">Working</string>
+    <string name="domain_status_down">Unreachable</string>
+    <string name="domain_status_dead">Unreachable · no new address found</string>
+    <string name="domain_status_protected">Protected site · could not check</string>
+    <string name="domain_status_applied">New address applied</string>
+    <string name="domain_new_address" formatted="true">NEW ADDRESS · %s</string>
+    <string name="domain_src_redirect">REDIRECT</string>
+    <string name="domain_src_number">NUMBER</string>
+    <string name="domain_src_tld">EXTENSION</string>
+    <string name="domain_src_admin">ADMIN LIST</string>
+    <string name="domain_src_redirect_long">The old address redirects here</string>
+    <string name="domain_src_number_long">Number increase</string>
+    <string name="domain_src_tld_long">Extension try</string>
+    <string name="domain_src_admin_long">From the admin list</string>
+    <string name="domain_plugin_address" formatted="true">Plugin address: %s</string>
+    <string name="domain_mode_tld">Extension</string>
+    <string name="domain_mode_full">Full address</string>
+    <string name="domain_full_hint">Use when the whole domain changed.</string>
+    <string name="domain_candidates">FOUND ADDRESSES</string>
+    <string name="domain_search">Search</string>
+    <string name="domain_candidates_hint">Tap Search to try redirects, number increase, extensions and the admin list.</string>
+    <string name="domain_no_candidates">No new address found.</string>
+    <string name="domain_preview">NEW ADDRESS</string>
+    <string name="domain_untested">Not tested</string>
+    <string name="domain_reached" formatted="true">Reached · %d ms</string>
+    <string name="domain_unreached">Unreachable</string>
+    <string name="domain_save">Save</string>
+    <string name="domain_reset_one">Reset to default</string>
+    <string name="domain_test">Test address</string>
+    <string name="domain_saved">Address saved</string>
+    <string name="domain_empty">No CloudStream plugins installed yet.</string>
+    <string name="domain_auto_found" formatted="true">New address found for %d plugins — Settings › Plugin addresses</string>
+    <string name="domain_invalid">Enter an address starting with http(s)://</string>
 </resources>

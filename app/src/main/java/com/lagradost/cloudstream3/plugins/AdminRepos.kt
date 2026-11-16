@@ -56,6 +56,21 @@ object AdminRepos {
 
     private val LOCK_NAMES = listOf("silinemez", "locked", "kilitli", "lock")
     private val LIST_NAMES = listOf("depolar", "repos", "repolar", "links", "linkler")
+    private val DOMAIN_NAMES = listOf("adresler", "domains", "domainler", "urls")
+
+    /** `"adresler": {"DiziPal": "https://dizipal1104.com", …}` */
+    fun parseDomains(body: String): Map<String, String> {
+        val obj = try { JSONTokener(body.trim()).nextValue() as? JSONObject } catch (_: Throwable) { null }
+            ?: return emptyMap()
+        val name = DOMAIN_NAMES.firstOrNull { obj.has(it) } ?: return emptyMap()
+        val m = obj.optJSONObject(name) ?: return emptyMap()
+        val out = linkedMapOf<String, String>()
+        m.keys().forEach { k ->
+            val v = m.optString(k).trim()
+            if (v.startsWith("http")) out[k] = v.trimEnd('/')
+        }
+        return out
+    }
 
     private fun links(text: String): List<String> =
         LINK_REGEX.findAll(text.replace("\\/", "/").replace("\\n", "\n"))
@@ -101,7 +116,7 @@ object AdminRepos {
         }
         // Firebase stores lists added by hand as {"0": "...", "1": "..."}.
         obj.keys().forEach { k ->
-            if (k in LOCK_NAMES) return@forEach
+            if (k in LOCK_NAMES || k in DOMAIN_NAMES) return@forEach
             when (val v = obj.opt(k)) {
                 is String -> links(v).forEach { out.add(Entry(it, locked)) }
                 is JSONArray -> fromArray(v, locked, out)
@@ -151,6 +166,7 @@ object AdminRepos {
         try {
             val body = app.get(LIST_URL, cacheTime = 0).text
             val entries = parse(body)
+            DomainOverrides.setAdminMap(parseDomains(body))
 
             val seenRepos = Collections.synchronizedSet(
                 (getKey<Array<String>>(SEEN_REPOS_KEY) ?: emptyArray()).toMutableSet()

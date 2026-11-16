@@ -77,6 +77,8 @@ class CloudStreamApp : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         applyDefaultBackupOnce()
+        // CloudStream Dark: plugin domain overrides (must precede plugin loading).
+        com.lagradost.cloudstream3.plugins.DomainOverrides.install()
         // If we want to initialize Coil as early as possible, maybe when
         // loading an image or GIF in a splash screen activity.
         // buildImageLoader(applicationContext)

@@ -10,4 +10,9 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="always|collapseActionView"
         tools:ignore="AppCompatResource" />
+    <item
+        android:id="@+id/domains_button"
+        android:icon="@drawable/ic_domain_globe"
+        android:title="@string/domain_title"
+        app:showAsAction="always" />
 </menu>

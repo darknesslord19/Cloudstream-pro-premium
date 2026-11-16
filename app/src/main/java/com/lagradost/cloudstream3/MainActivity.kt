@@ -1715,6 +1715,15 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                     // CloudStream Dark: admin repository list (Firebase) —
                     // listed repos are added and their plugins installed.
                     com.lagradost.cloudstream3.plugins.AdminRepos.sync(this@MainActivity)
+
+                    // CloudStream Dark: look for moved plugin domains.
+                    if (com.lagradost.cloudstream3.plugins.DomainOverrides.autoCheck) {
+                        kotlinx.coroutines.delay(8_000)
+                        val moved = com.lagradost.cloudstream3.plugins.DomainOverrides.checkAll()
+                        if (moved > 0) main {
+                            showToast(txt(R.string.domain_auto_found, moved), Toast.LENGTH_LONG)
+                        }
+                    }
                 }
 
                 ioSafe {

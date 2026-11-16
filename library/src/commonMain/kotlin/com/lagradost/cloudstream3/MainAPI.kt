@@ -131,7 +131,17 @@ object APIHolder {
     var apis: AtomicList<MainAPI> = atomicListOf()
     var apiMap: Map<String, Int>? = null
 
+    /**
+     * CloudStream Dark: user/admin domain overrides. Called for every provider
+     * as it registers; a non-blank result replaces its mainUrl.
+     */
+    var mainUrlOverride: ((MainAPI) -> String?)? = null
+
     fun addPluginMapping(plugin: MainAPI) {
+        try {
+            mainUrlOverride?.invoke(plugin)?.let { if (it.isNotBlank()) plugin.mainUrl = it }
+        } catch (_: Throwable) {
+        }
         apis.withLock {
             apis = apis + plugin
         }

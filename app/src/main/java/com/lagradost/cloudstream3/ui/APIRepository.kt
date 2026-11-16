@@ -86,7 +86,10 @@ class APIRepository(val api: MainAPI) {
         return safeApiCall {
             withTimeout(getTimeout(api.loadTimeoutMs)) {
                 if (isInvalidData(url)) throw ErrorLoadingException()
-                val fixedUrl = api.fixUrl(url)
+                // CloudStream Dark: bookmarks saved under an old domain follow the new one.
+                val fixedUrl = api.fixUrl(
+                    com.lagradost.cloudstream3.plugins.DomainOverrides.rewrite(api, url)
+                )
                 val lookingForHash = Pair(api.name, fixedUrl)
 
                 val cached = cache.withLock {
@@ -235,7 +238,10 @@ class APIRepository(val api: MainAPI) {
         if (isInvalidData(data)) return false // this makes providers cleaner
         return try {
             withTimeout(getTimeout(api.loadLinksTimeoutMs)) {
-                api.loadLinks(data, isCasting, subtitleCallback, callback)
+                api.loadLinks(
+                    com.lagradost.cloudstream3.plugins.DomainOverrides.rewrite(api, data),
+                    isCasting, subtitleCallback, callback
+                )
             }
         } catch (throwable: Throwable) {
             logError(throwable)

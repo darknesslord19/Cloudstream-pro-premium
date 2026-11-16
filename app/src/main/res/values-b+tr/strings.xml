@@ -1035,4 +1035,53 @@
     <string name="plugins_remove_confirm_title">Eklentiler kaldırılsın mı?</string>
     <string name="plugins_remove_confirm_message" formatted="true">%d eklenti kaldırılacak.</string>
     <string name="admin_repo_locked">Admin tarafından eklendi, silinemez</string>
+    <string name="domain_title">Eklenti adresleri</string>
+    <string name="domain_settings_sub">Değişen eklenti adreslerini düzenle veya bul</string>
+    <string name="domain_filter_all" formatted="true">Tümü · %d</string>
+    <string name="domain_filter_changed" formatted="true">Değiştirilen · %d</string>
+    <string name="domain_summary_title" formatted="true">%d eklenti adresi</string>
+    <string name="domain_summary_sub" formatted="true">%d tanesi senin tarafından değiştirildi</string>
+    <string name="domain_scanning">Adresler taranıyor…</string>
+    <string name="domain_scanning_sub">Yönlendirme, numara, uzantı ve admin listesi deneniyor</string>
+    <string name="domain_found_title" formatted="true">%d yeni adres bulundu</string>
+    <string name="domain_scan_done">Tarama bitti</string>
+    <string name="domain_scan">Değişen adresleri bul</string>
+    <string name="domain_apply_all">Bulunanların hepsini uygula</string>
+    <string name="domain_reset_all">Hepsini varsayılana döndür</string>
+    <string name="domain_auto_title">Açılışta adresleri kontrol et</string>
+    <string name="domain_auto_sub">Ulaşılamayan eklenti için yeni adresi arar ve bildirir</string>
+    <string name="domain_changed_badge">DEĞİŞTİ</string>
+    <string name="domain_status_ok">Çalışıyor</string>
+    <string name="domain_status_down">Ulaşılamadı</string>
+    <string name="domain_status_dead">Ulaşılamadı · yeni adres bulunamadı</string>
+    <string name="domain_status_protected">Korumalı site · kontrol edilemedi</string>
+    <string name="domain_status_applied">Yeni adres uygulandı</string>
+    <string name="domain_new_address" formatted="true">YENİ ADRES · %s</string>
+    <string name="domain_src_redirect">YÖNLENDİRME</string>
+    <string name="domain_src_number">NUMARA</string>
+    <string name="domain_src_tld">UZANTI DENEMESİ</string>
+    <string name="domain_src_admin">ADMİN LİSTESİ</string>
+    <string name="domain_src_redirect_long">Eski adres buraya yönlendiriyor</string>
+    <string name="domain_src_number_long">Numara artırma</string>
+    <string name="domain_src_tld_long">Uzantı denemesi</string>
+    <string name="domain_src_admin_long">Admin listesinden</string>
+    <string name="domain_plugin_address" formatted="true">Eklentinin adresi: %s</string>
+    <string name="domain_mode_tld">Uzantı</string>
+    <string name="domain_mode_full">Tam adres</string>
+    <string name="domain_full_hint">Alan adı tamamen değiştiyse kullan.</string>
+    <string name="domain_candidates">BULUNAN ADRESLER</string>
+    <string name="domain_search">Ara</string>
+    <string name="domain_candidates_hint">Ara simgesine bas; yönlendirme, numara artırma, uzantı denemesi ve admin listesi kontrol edilir.</string>
+    <string name="domain_no_candidates">Yeni adres bulunamadı.</string>
+    <string name="domain_preview">YENİ ADRES</string>
+    <string name="domain_untested">Denenmedi</string>
+    <string name="domain_reached" formatted="true">Erişildi · %d ms</string>
+    <string name="domain_unreached">Ulaşılamadı</string>
+    <string name="domain_save">Kaydet</string>
+    <string name="domain_reset_one">Varsayılana döndür</string>
+    <string name="domain_test">Adresi dene</string>
+    <string name="domain_saved">Adres kaydedildi</string>
+    <string name="domain_empty">Henüz yüklü CloudStream eklentisi yok.</string>
+    <string name="domain_auto_found" formatted="true">%d eklenti için yeni adres bulundu — Ayarlar › Eklenti adresleri</string>
+    <string name="domain_invalid">http(s):// ile başlayan bir adres yaz</string>
 </resources>

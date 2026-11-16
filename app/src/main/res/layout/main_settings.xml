@@ -219,6 +219,20 @@
                     android:background="?attr/colorPrimaryDark" />
 
                 <TextView
+                    android:id="@+id/settings_domains"
+                    style="@style/SettingsItem"
+                    android:drawablePadding="14dp"
+                    android:text="@string/domain_title"
+                    app:drawableStartCompat="@drawable/ic_domain_globe" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="58dp"
+                    android:alpha="0.15"
+                    android:background="?attr/colorPrimaryDark" />
+
+                <TextView
                     android:id="@+id/settings_stremio_addons"
                     style="@style/SettingsItem"
                     android:drawablePadding="14dp"

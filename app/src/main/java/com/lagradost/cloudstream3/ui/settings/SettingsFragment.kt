@@ -588,6 +588,11 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
                 navigate(R.id.action_navigation_global_to_navigation_settings_extensions)
             }
 
+            // CloudStream Dark: Plugin addresses (domain overrides / finder).
+            settingsDomains.setOnClickListener {
+                navigate(R.id.action_navigation_global_to_navigation_settings_domains)
+            }
+
             // Stremio Addons is likewise a custom screen (addon list),
             // so its row navigates to its own page.
             settingsStremioAddons.setOnClickListener {

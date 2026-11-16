@@ -365,6 +365,13 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
         }
 
         binding.settingsToolbar.apply {
+            // CloudStream Dark: shortcut to Plugin addresses.
+            setOnMenuItemClickListener { item ->
+                if (item.itemId == R.id.domains_button) {
+                    findNavController().navigate(R.id.action_navigation_global_to_navigation_settings_domains)
+                    true
+                } else false
+            }
             val searchItem = menu?.findItem(R.id.search_button)
             val searchView = searchItem?.actionView as? SearchView
 
