@@ -1468,10 +1468,20 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         insecureApp.initClient(this, ignoreSSL = true)
 
         // CloudStream HTML API: yerel ağdaki tarayıcılar için küçük sunucu (port 8686)
-        if (!com.lagradost.cloudstream3.htmlapi.HtmlApiServer.isRunning()) {
+        if (com.lagradost.cloudstream3.htmlapi.HtmlApiDialog.isEnabled(this) &&
+            !com.lagradost.cloudstream3.htmlapi.HtmlApiServer.isRunning()
+        ) {
             com.lagradost.cloudstream3.htmlapi.HtmlApiServer.start(this)
-            com.lagradost.cloudstream3.htmlapi.HtmlApiServer.addresses().firstOrNull()?.let {
-                android.widget.Toast.makeText(this, "HTML arayüz: $it", android.widget.Toast.LENGTH_LONG).show()
+            if (savedInstanceState == null && com.lagradost.cloudstream3.htmlapi.HtmlApiDialog.popupEnabled(this)) {
+                // Açılıştaki diğer pencerelerle çakışmasın diye kısa bir gecikmeyle göster
+                window.decorView.postDelayed({
+                    if (!isFinishing && !isDestroyed) {
+                        try {
+                            com.lagradost.cloudstream3.htmlapi.HtmlApiDialog.show(this, fromStartup = true)
+                        } catch (_: Throwable) {
+                        }
+                    }
+                }, 1500)
             }
         }
 

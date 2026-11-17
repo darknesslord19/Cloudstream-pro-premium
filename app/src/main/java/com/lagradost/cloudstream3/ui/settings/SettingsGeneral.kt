@@ -191,6 +191,25 @@ class SettingsGeneral : BasePreferenceFragmentCompat() {
                 ?: mutableListOf()
         }
 
+        // ---- HTML arayüz (html-api) ----
+        val htmlAddr = findPreference<androidx.preference.Preference>("html_api_address")
+        fun refreshHtmlAddr() {
+            htmlAddr?.summary = context?.let { com.lagradost.cloudstream3.htmlapi.HtmlApiDialog.summary(it) }
+        }
+        refreshHtmlAddr()
+        htmlAddr?.setOnPreferenceClickListener { pref ->
+            com.lagradost.cloudstream3.htmlapi.HtmlApiDialog.show(pref.context)
+            return@setOnPreferenceClickListener true
+        }
+        findPreference<androidx.preference.Preference>("html_api_enabled")?.setOnPreferenceChangeListener { pref, newValue ->
+            if (newValue == true) com.lagradost.cloudstream3.htmlapi.HtmlApiServer.start(pref.context)
+            else com.lagradost.cloudstream3.htmlapi.HtmlApiServer.stop()
+            htmlAddr?.summary = if (newValue == true)
+                com.lagradost.cloudstream3.htmlapi.HtmlApiServer.addresses().joinToString("\n").ifEmpty { "Wi-Fi bağlantısı yok" }
+            else "Kapalı"
+            return@setOnPreferenceChangeListener true
+        }
+
         getPref(R.string.locale_key)?.setOnPreferenceClickListener { pref ->
             val current = getCurrentLocale(pref.context)
             val languageTagsIETF = appLanguages.map { it.second }
