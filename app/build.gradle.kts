@@ -182,6 +182,8 @@ android {
     productFlavors {
         create("stable") {
             dimension = "state"
+            // html-api dalı: asıl uygulamanın yanına ayrı kurulsun, onu ezmesin
+            applicationIdSuffix = ".html"
         }
         create("prerelease") {
             dimension = "state"

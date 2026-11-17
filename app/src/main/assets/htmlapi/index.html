@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CloudStream HTML</title>
+<style>
+:root{--bg:#0b0b0f;--panel:#16161d;--panel2:#20202a;--text:#ececf1;--muted:#9a9aa8;--accent:#e50914;--r:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:40px}
+button,select,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus{outline:none}:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hidden{display:none!important}
+.top{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(var(--bg) 75%,transparent)}
+.logo{font-weight:800;font-size:19px;white-space:nowrap;padding:4px}.logo span{color:var(--accent)}
+select,#q{background:var(--panel2);border:1px solid #2c2c38;border-radius:999px;padding:9px 14px;font-size:14px;min-width:0}
+select{max-width:46vw}#q{flex:1;min-width:140px}
+.icon{width:40px;height:40px;border-radius:50%;background:var(--panel2);font-size:18px}
+.msg{color:var(--muted);padding:40px 16px;text-align:center;line-height:1.6}
+.row{margin:12px 0 4px}.row h2{font-size:16px;margin:0 0 8px;padding:0 16px}.row h2 small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:4px 16px 10px;scroll-padding:0 16px;scrollbar-width:none}.strip::-webkit-scrollbar{display:none}
+.card{flex:0 0 auto;width:116px;text-align:left;padding:0;border-radius:var(--r);transition:transform .12s}
+.card.h{width:200px}
+.poster{position:relative;width:100%;aspect-ratio:2/3;border-radius:var(--r);overflow:hidden;background:var(--panel2)}
+.card.h .poster{aspect-ratio:16/9}
+.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-weight:700;font-size:14px}
+.q{position:absolute;top:6px;left:6px;background:var(--accent);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.name{font-size:12.5px;margin-top:6px;line-height:1.25;color:#d6d6de;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card:focus-visible{outline:none;transform:scale(1.06)}.card:focus-visible .poster{box-shadow:0 0 0 3px #fff}
+.layer{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto}
+.close{position:fixed;top:12px;right:12px;z-index:3;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.65);font-size:18px}
+.hero{position:relative;height:44vh;min-height:220px;background:var(--panel) center/cover no-repeat}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 30%,var(--bg))}
+.detail{position:relative;z-index:1;margin-top:-70px;padding:0 16px 30px;max-width:980px}
+.detail h1{margin:0 0 6px;font-size:26px}.meta{color:var(--muted);font-size:13px;margin-bottom:10px}
+.plot{color:#c9c9d3;line-height:1.5;font-size:14.5px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;background:var(--panel2);font-weight:600;margin:4px 6px 4px 0}
+.btn.p{background:#fff;color:#000}
+.st{margin:20px 0 8px;font-size:15px;color:var(--muted);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:7px 12px;border-radius:999px;background:var(--panel2);font-size:13px}.chip.on{background:var(--accent)}
+.ep{display:flex;gap:12px;width:100%;text-align:left;padding:10px;border-radius:8px;background:var(--panel);margin-bottom:8px;align-items:center}
+.ep .n{font-size:19px;font-weight:800;color:var(--muted);width:34px;text-align:center}.ep .t{flex:1}.ep b{display:block;font-size:14.5px}.ep span{color:var(--muted);font-size:12.5px}
+.ep .pg{height:3px;background:#333;border-radius:2px;margin-top:6px;overflow:hidden}.ep .pg i{display:block;height:100%;background:var(--accent)}
+.player{background:#000;display:flex;flex-direction:column}
+.player video{flex:1;width:100%;min-height:0;background:#000}
+.pbar{display:flex;gap:6px;align-items:center;padding:8px 12px;overflow-x:auto;background:#111}
+.pbar .chip{white-space:nowrap}.ptitle{padding:10px 60px 6px 14px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#2a2a35;padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw;box-shadow:0 4px 20px #0008}
+.box{max-width:520px;margin:40px auto;padding:20px;background:var(--panel);border-radius:12px}
+.box input{width:100%;background:var(--panel2);border:1px solid #2c2c38;border-radius:8px;padding:12px;font-size:15px;margin:10px 0}
+.note{color:var(--muted);font-size:13px;line-height:1.55}
+@media(min-width:900px){.card{width:150px}.card.h{width:260px}.row h2,.strip{padding-left:40px;padding-right:40px}.strip{scroll-padding:0 40px}.detail{padding:0 40px 40px}.detail h1{font-size:38px}.hero{height:56vh}}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="logo" id="homeBtn">Cloud<span>Stream</span></button>
+  <select id="prov" aria-label="Eklenti"></select>
+  <input id="q" type="search" placeholder="Tüm eklentilerde ara…" autocomplete="off">
+  <button class="icon" id="srvBtn" aria-label="Sunucu">⚙</button>
+</header>
+<main id="main"><div class="msg">Bağlanıyor…</div></main>
+<div id="layers"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+'use strict';
+/* CloudStream HTML ön yüz.
+ * İçerikler telefondaki/TV'deki CloudStream uygulamasından (port 8686) gelir.
+ * Bu dosyayı uygulama sunar (http://IP:8686) ya da tek başına açabilirsin; o zaman IP sorar. */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+             set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+let BASE = '';
+let providers = [];
+
+/* ---------- Sunucu ---------- */
+async function api(path, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const r = await fetch(BASE + path + (qs ? '?' + qs : ''));
+  const j = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
+  if (!r.ok || j.error) throw new Error(j.error || 'HTTP ' + r.status);
+  return j;
+}
+async function tryBase(b) {
+  try {
+    const c = new AbortController(); setTimeout(() => c.abort(), 4000);
+    const r = await fetch(b + '/api/info', { signal: c.signal });
+    return r.ok;
+  } catch (e) { return false; }
+}
+async function connect() {
+  const fromApp = /^https?:$/.test(location.protocol) && await tryBase('');
+  if (fromApp) BASE = '';
+  else {
+    const saved = new URLSearchParams(location.search).get('server') || LS.get('server', '');
+    if (!saved || !(await tryBase(saved))) return askServer(saved);
+    BASE = saved;
+  }
+  try {
+    providers = await api('/api/providers');
+  } catch (e) { return askServer(BASE, e.message); }
+  const sel = $('#prov');
+  sel.innerHTML = providers.length
+    ? providers.map(p => `<option value="${esc(p.name)}">${esc(p.name)}${p.hasMainPage ? '' : ' (ana sayfa yok)'}</option>`).join('')
+    : '<option>Eklenti yok</option>';
+  const last = LS.get('prov', '');
+  const pick = providers.find(p => p.name === last) || providers.find(p => p.hasMainPage) || providers[0];
+  if (pick) sel.value = pick.name;
+  loadHome();
+}
+function askServer(prev = '', err = '') {
+  closeAll();
+  $('#main').innerHTML = `<div class="box"><h2 style="margin-top:0">CloudStream'e bağlan</h2>
+    <p class="note">Telefonda / TV'de <b>CloudStream HTML</b> uygulamasını aç. Açılışta ekranda gösterilen adresi buraya yaz
+    (ör. <code>http://192.168.1.25:8686</code>). İki cihaz aynı Wi-Fi ağında olmalı.</p>
+    <input id="srv" type="url" placeholder="http://192.168.1.25:8686" value="${esc(prev)}">
+    <button class="btn p" id="srvGo">Bağlan</button>
+    ${err ? `<p class="note" style="color:#ff6b6b">${esc(err)}</p>` : ''}
+    <p class="note">İpucu: Adresi tarayıcıda doğrudan açarsan bu ekran hiç gelmez, sayfayı uygulama kendisi sunar.</p></div>`;
+  const go = async () => {
+    let v = $('#srv').value.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\//.test(v)) v = 'http://' + v;
+    if (!/:\d+$/.test(v)) v += ':8686';
+    $('#srvGo').textContent = 'Deneniyor…';
+    if (await tryBase(v)) { LS.set('server', v); BASE = v; connect(); }
+    else { $('#srvGo').textContent = 'Bağlan'; toast('Bağlanılamadı. Uygulama açık mı, aynı ağda mısınız?'); }
+  };
+  $('#srvGo').onclick = go;
+  $('#srv').onkeydown = e => { if (e.key === 'Enter') go(); };
+  setTimeout(() => $('#srv').focus(), 50);
+}
+
+/* ---------- Yardımcılar ---------- */
+function b64u(s) {
+  const bytes = new TextEncoder().encode(s); let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function img(url, headers) {
+  if (!url) return '';
+  if (headers && Object.keys(headers).length) return BASE + '/proxy?u=' + b64u(url) + '&h=' + b64u(JSON.stringify(headers));
+  return url;
+}
+function color(s) { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `linear-gradient(135deg,hsl(${h},55%,32%),hsl(${(h + 40) % 360},60%,18%))`; }
+const items = new Map(); let seq = 0;
+function card(it, horizontal) {
+  const id = 'i' + (++seq); items.set(id, it);
+  const ph = `<div class="ph" style="background:${color(it.name)}">${esc(it.name)}</div>`;
+  const src = img(it.poster, it.posterHeaders);
+  const pic = src ? `<img loading="lazy" referrerpolicy="no-referrer" src="${esc(src)}" alt="" onerror="this.outerHTML=this.dataset.ph" data-ph="${esc(ph)}">` : ph;
+  return `<button class="card${horizontal ? ' h' : ''}" data-id="${id}"><div class="poster">${pic}${it.quality ? `<div class="q">${esc(it.quality)}</div>` : ''}</div><div class="name">${esc(it.name)}</div></button>`;
+}
+function row(title, list, sub = '', horizontal = false) {
+  if (!list || !list.length) return '';
+  return `<section class="row"><h2>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}</h2><div class="strip">${list.map(i => card(i, horizontal)).join('')}</div></section>`;
+}
+
+/* ---------- Ana sayfa & arama ---------- */
+async function loadHome() {
+  const p = $('#prov').value; LS.set('prov', p);
+  const main = $('#main');
+  main.innerHTML = `<div class="msg">${esc(p)} yükleniyor…</div>`;
+  const prov = providers.find(x => x.name === p);
+  if (!prov) { main.innerHTML = '<div class="msg">CloudStream\'de kurulu eklenti yok. Uygulamada bir depo ve eklenti ekle.</div>'; return; }
+  let html = row('İzlemeye devam et', continueList(), '', false);
+  if (!prov.hasMainPage) { main.innerHTML = html + '<div class="msg">Bu eklentinin ana sayfası yok. Yukarıdan arama yapabilirsin.</div>'; return; }
+  try {
+    const r = await api('/api/home', { provider: p });
+    if ($('#prov').value !== p) return;
+    html += r.lists.map(l => row(l.name, l.items, '', l.horizontal)).join('');
+    main.innerHTML = html || '<div class="msg">Ana sayfa boş geldi.</div>';
+  } catch (e) { main.innerHTML = html + `<div class="msg">Yüklenemedi: ${esc(e.message)}</div>`; }
+}
+async function doSearch() {
+  const q = $('#q').value.trim();
+  if (!q) return loadHome();
+  const main = $('#main');
+  main.innerHTML = `<div class="msg">“${esc(q)}” ${providers.length} eklentide aranıyor…</div>`;
+  try {
+    const groups = await api('/api/search', { q });
+    if ($('#q').value.trim() !== q) return;
+    main.innerHTML = groups.length ? groups.map(g => row(g.provider, g.items, g.items.length + ' sonuç')).join('') : '<div class="msg">Sonuç yok.</div>';
+  } catch (e) { main.innerHTML = `<div class="msg">Arama hatası: ${esc(e.message)}</div>`; }
+}
+
+/* ---------- İzleme geçmişi ---------- */
+const prog = () => LS.get('progress', {});
+function saveProg(key, pos, dur, meta) {
+  if (!dur || !isFinite(dur) || pos < 5) return;
+  const p = prog(); p[key] = { ...(p[key] || {}), ...meta, pos, dur, t: Date.now() };
+  const keys = Object.keys(p).sort((a, b) => p[b].t - p[a].t); keys.slice(300).forEach(k => delete p[k]);
+  LS.set('progress', p);
+}
+function continueList() {
+  const seen = new Set();
+  return Object.values(prog()).filter(v => v.item && v.pos / v.dur < 0.95).sort((a, b) => b.t - a.t)
+    .filter(v => { const k = v.item.provider + v.item.url; if (seen.has(k)) return false; seen.add(k); return true; })
+    .slice(0, 20).map(v => v.item);
+}
+
+/* ---------- Katmanlar ---------- */
+const layers = [];
+function pushLayer(html, cls = '') {
+  const el = document.createElement('div'); el.className = 'layer ' + cls;
+  el.innerHTML = `<button class="close" data-close>✕</button>` + html;
+  $('#layers').appendChild(el); layers.push({ el, prev: document.activeElement });
+  return el;
+}
+function popLayer() {
+  const l = layers.pop(); if (!l) return false;
+  l.el.dispatchEvent(new Event('closing')); l.el.remove();
+  if (l.prev && document.contains(l.prev)) l.prev.focus();
+  return true;
+}
+function closeAll() { while (popLayer()); }
+
+/* ---------- Detay ---------- */
+async function openItem(it) {
+  const el = pushLayer('<div class="msg" style="padding-top:80px">Yükleniyor…</div>');
+  let d;
+  try { d = await api('/api/load', { provider: it.provider, url: it.url }); }
+  catch (e) { el.querySelector('.msg').textContent = 'Açılamadı: ' + e.message; return; }
+  if (!document.contains(el)) return;
+  const meta = [d.year, d.type, d.duration ? d.duration + ' dk' : '', d.provider].filter(Boolean).map(esc).join(' · ');
+  const tags = (d.tags || []).slice(0, 8).map(t => `<span class="chip">${esc(t)}</span>`).join('');
+  const hero = img(d.backdrop || d.poster, d.posterHeaders);
+  const itemRef = { name: d.name, url: it.url, provider: it.provider, poster: d.poster || it.poster, posterHeaders: d.posterHeaders || it.posterHeaders };
+  el.innerHTML = `<button class="close" data-close>✕</button>
+    <div class="hero" style="background-image:url('${esc(hero)}')"></div>
+    <div class="detail"><h1>${esc(d.name)}</h1><div class="meta">${meta}</div>
+    ${tags ? `<div class="chips" style="margin-bottom:10px">${tags}</div>` : ''}
+    <div class="plot">${esc(d.plot || '')}</div><div id="act"></div></div>
+    ${row('Benzerleri', d.recommendations || [])}`;
+  const act = $('#act', el);
+  if (d.kind === 'movie' || d.kind === 'live') {
+    const p = prog()[d.data];
+    const resume = p && p.pos / p.dur < 0.95;
+    act.innerHTML = `<div style="margin:16px 0"><button class="btn p" data-play>▶ ${resume ? 'Devam et' : 'Oynat'}</button>
+      ${resume ? '<button class="btn" data-restart>Baştan</button>' : ''}</div>`;
+    act.onclick = e => {
+      if (e.target.closest('[data-play]')) play(it.provider, d.data, d.name, itemRef);
+      if (e.target.closest('[data-restart]')) play(it.provider, d.data, d.name, itemRef, true);
+    };
+  } else if (d.kind === 'series') {
+    const eps = d.episodes || [];
+    const dubs = [...new Set(eps.map(e => e.dub).filter(Boolean))];
+    let dub = dubs[0] || null;
+    const seasonsOf = () => [...new Set(eps.filter(e => !dub || e.dub === dub).map(e => e.season ?? 1))].sort((a, b) => a - b);
+    let season = seasonsOf()[0];
+    const draw = () => {
+      const ss = seasonsOf();
+      const list = eps.filter(e => (!dub || e.dub === dub) && (e.season ?? 1) === season);
+      const pm = prog();
+      act.innerHTML = `${dubs.length > 1 ? `<div class="st">Dil</div><div class="chips">${dubs.map(x => `<button class="chip ${x === dub ? 'on' : ''}" data-dub="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''}
+        ${ss.length > 1 ? `<div class="st">Sezon</div><div class="chips">${ss.map(s => `<button class="chip ${s === season ? 'on' : ''}" data-season="${s}">${s}. Sezon</button>`).join('')}</div>` : ''}
+        <div class="st">Bölümler (${list.length})</div>
+        ${list.map((e) => { const p = pm[e.data]; const pc = p ? Math.min(100, Math.round(p.pos / p.dur * 100)) : 0;
+          return `<button class="ep" data-ep="${eps.indexOf(e)}"><div class="n">${e.episode ?? ''}</div><div class="t"><b>${esc(e.name || ('Bölüm ' + (e.episode ?? '')))}</b>
+          <span>${esc((e.description || '').slice(0, 140))}</span>${pc ? `<div class="pg"><i style="width:${pc}%"></i></div>` : ''}</div></button>`; }).join('') || '<div class="msg">Bölüm yok.</div>'}`;
+    };
+    draw();
+    el.redraw = draw;
+    act.onclick = e => {
+      const dd = e.target.closest('[data-dub]'); if (dd) { dub = dd.dataset.dub; season = seasonsOf()[0]; draw(); return; }
+      const s = e.target.closest('[data-season]'); if (s) { season = Number(s.dataset.season); draw(); return; }
+      const b = e.target.closest('[data-ep]');
+      if (b) { const ep = eps[Number(b.dataset.ep)];
+        play(it.provider, ep.data, `${d.name} · S${ep.season ?? 1} B${ep.episode ?? ''}${ep.name ? ' – ' + ep.name : ''}`, itemRef); }
+    };
+  } else {
+    act.innerHTML = '<div class="msg">Bu içerik türü (ör. torrent) tarayıcıda oynatılamıyor.</div>';
+  }
+  (el.querySelector('[data-play],[data-ep],.chip') || el.querySelector('.close')).focus();
+}
+
+/* ---------- Oynatıcı ---------- */
+let hls = null, dash = null;
+function loadScript(src, globalName) {
+  if (window[globalName]) return Promise.resolve();
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src + ' yüklenemedi')); document.head.appendChild(s); });
+}
+async function play(provider, data, title, item, restart) {
+  const el = pushLayer(`<div class="ptitle">${esc(title)}</div><video controls autoplay playsinline></video>
+    <div class="pbar"><span class="note">Bağlantılar aranıyor… (eklentiye göre 5-60 sn)</span></div>`, 'player');
+  const v = $('video', el), bar = $('.pbar', el);
+  let res;
+  try { res = await api('/api/links', { provider, data }); }
+  catch (e) { bar.innerHTML = `<span class="note">Hata: ${esc(e.message)}</span>`; return; }
+  if (!document.contains(el)) return;
+  const links = (res.links || []).filter(l => l.type !== 'TORRENT');
+  if (!links.length) { bar.innerHTML = '<span class="note">Oynatılabilir bağlantı bulunamadı.</span>'; return; }
+  const p = prog()[data];
+  let startAt = !restart && p && p.pos / p.dur < 0.95 ? p.pos : 0;
+  let cur = -1;
+  const label = l => `${l.name}${l.quality > 0 ? ' ' + l.quality + 'p' : ''}`;
+  const drawBar = () => {
+    bar.innerHTML = links.map((l, i) => `<button class="chip ${i === cur ? 'on' : ''}" data-l="${i}">${esc(label(l))}</button>`).join('')
+      + `<button class="chip" data-copy>Adresi kopyala</button>`;
+  };
+  const cleanup = () => { if (hls) { hls.destroy(); hls = null; } if (dash) { dash.reset(); dash = null; } };
+  const start = async i => {
+    cur = i; drawBar(); cleanup();
+    const l = links[i]; const src = BASE + l.proxy;
+    const t = startAt || (v.currentTime > 1 ? v.currentTime : 0);
+    v.querySelectorAll('track').forEach(x => x.remove());
+    (res.subtitles || []).forEach((s, j) => { const tr = document.createElement('track');
+      Object.assign(tr, { kind: 'subtitles', src: BASE + s.proxy, srclang: (s.lang || 'tr').slice(0, 2).toLowerCase(), label: s.lang || 'Altyazı', default: j === 0 }); v.appendChild(tr); });
+    try {
+      if (l.type === 'M3U8' && !v.canPlayType('application/vnd.apple.mpegurl')) {
+        await loadScript('https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js', 'Hls');
+        hls = new Hls({ maxBufferLength: 60 });
+        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) fail(); });
+        hls.loadSource(src); hls.attachMedia(v);
+      } else if (l.type === 'DASH') {
+        await loadScript('https://cdn.dashjs.org/latest/dash.all.min.js', 'dashjs');
+        dash = dashjs.MediaPlayer().create(); dash.initialize(v, src, true);
+      } else { v.src = src; }
+    } catch (e) { fail(); return; }
+    v.onloadedmetadata = () => { if (t) v.currentTime = t; startAt = 0; };
+    v.play().catch(() => {});
+  };
+  const fail = () => { if (cur + 1 < links.length) { toast('Bağlantı açılmadı, sıradaki deneniyor…'); start(cur + 1); } else toast('Hiçbir bağlantı oynatılamadı.'); };
+  v.onerror = fail;
+  let last = 0;
+  v.ontimeupdate = () => { if (Date.now() - last > 5000) { last = Date.now(); saveProg(data, v.currentTime, v.duration, { item }); } };
+  v.onended = () => { saveProg(data, v.duration, v.duration, { item }); popLayer(); };
+  bar.onclick = e => {
+    const b = e.target.closest('[data-l]'); if (b) start(Number(b.dataset.l));
+    if (e.target.closest('[data-copy]')) {
+      const abs = new URL(BASE + links[cur].proxy, location.href).href;
+      (navigator.clipboard ? navigator.clipboard.writeText(abs) : Promise.reject()).then(() => toast('Kopyalandı (VLC vb. ile açabilirsin)'), () => prompt('Adres:', abs));
+    }
+  };
+  el.addEventListener('closing', () => { saveProg(data, v.currentTime, v.duration, { item }); cleanup(); v.removeAttribute('src'); v.load();
+    const top = layers[layers.length - 1]; if (top && top.el.redraw) top.el.redraw(); });
+  start(0);
+  v.focus();
+}
+
+/* ---------- Olaylar ---------- */
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) { popLayer(); return; }
+  const c = e.target.closest('.card[data-id]');
+  if (c) openItem(items.get(c.dataset.id));
+});
+$('#prov').onchange = () => { $('#q').value = ''; loadHome(); };
+$('#homeBtn').onclick = () => { closeAll(); $('#q').value = ''; loadHome(); };
+$('#srvBtn').onclick = () => askServer(BASE || location.origin);
+$('#q').onkeydown = e => { if (e.key === 'Enter') doSearch(); };
+$('#q').addEventListener('search', doSearch);
+
+/* Kumanda / klavye: ok tuşlarıyla odak gezdirme, Esc/Geri ile kapat */
+document.addEventListener('keydown', e => {
+  if (['Escape', 'GoBack', 'BrowserBack', 'Backspace'].includes(e.key) && !(e.key === 'Backspace' && /INPUT|SELECT/.test(document.activeElement.tagName))) {
+    if (popLayer()) e.preventDefault(); return;
+  }
+  const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }, d = dirs[e.key];
+  if (!d) return;
+  const a = document.activeElement;
+  if (a && a.tagName === 'VIDEO') return;
+  if (a && /INPUT|SELECT/.test(a.tagName) && (d[0] !== 0 || a.tagName === 'SELECT')) return;
+  const scope = layers.length ? layers[layers.length - 1].el : document.body;
+  const els = [...scope.querySelectorAll('button,input,select,video')].filter(x => x !== a && (layers.length || !x.closest('#layers')) && x.getBoundingClientRect().width > 0);
+  if (!a || a === document.body) { els[0]?.focus(); e.preventDefault(); return; }
+  const ar = a.getBoundingClientRect(), ax = ar.left + ar.width / 2, ay = ar.top + ar.height / 2;
+  let best = null, bs = Infinity;
+  for (const x of els) { const r = x.getBoundingClientRect(), dx = r.left + r.width / 2 - ax, dy = r.top + r.height / 2 - ay;
+    const along = dx * d[0] + dy * d[1]; if (along <= 2) continue; const s = along + Math.abs(d[0] ? dy : dx) * 2.5; if (s < bs) { bs = s; best = x; } }
+  if (best) { e.preventDefault(); best.focus(); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+});
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(tt); tt = setTimeout(() => t.classList.add('hidden'), 3500); }
+
+connect();
+</script>
+</body>
+</html>

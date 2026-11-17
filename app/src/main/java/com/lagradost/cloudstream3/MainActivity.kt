@@ -1467,6 +1467,14 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         @OptIn(UnsafeSSL::class)
         insecureApp.initClient(this, ignoreSSL = true)
 
+        // CloudStream HTML API: yerel ağdaki tarayıcılar için küçük sunucu (port 8686)
+        if (!com.lagradost.cloudstream3.htmlapi.HtmlApiServer.isRunning()) {
+            com.lagradost.cloudstream3.htmlapi.HtmlApiServer.start(this)
+            com.lagradost.cloudstream3.htmlapi.HtmlApiServer.addresses().firstOrNull()?.let {
+                android.widget.Toast.makeText(this, "HTML arayüz: $it", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+
         val settingsManager = PreferenceManager.getDefaultSharedPreferences(this)
 
         setLastError(this)
