@@ -4,8 +4,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -77,6 +80,31 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return false;
+            }
+
+            /**
+             * Arayüz (index.html) telefondan değil bu uygulamanın içinden verilir (assets/ui.html).
+             * Böylece telefondaki CloudStream sürümü ne olursa olsun TV'de hep uyumlu arayüz açılır;
+             * telefondan yalnızca veri (/api/...) ve akış (/proxy) alınır. Adres aynı kaldığı için CORS sorunu olmaz.
+             */
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                try {
+                    Uri u = request.getUrl();
+                    String server = prefs.getString("server", "");
+                    String path = u.getPath() == null ? "/" : u.getPath();
+                    if ("GET".equalsIgnoreCase(request.getMethod())
+                            && ("http".equals(u.getScheme()))
+                            && !server.isEmpty() && server.endsWith(u.getHost() + ":" + u.getPort())
+                            && (path.equals("/") || path.equals("/index.html"))) {
+                        WebResourceResponse r = new WebResourceResponse("text/html", "utf-8", getAssets().open("ui.html"));
+                        java.util.Map<String, String> h = new java.util.HashMap<>();
+                        h.put("Cache-Control", "no-store");
+                        r.setResponseHeaders(h);
+                        return r;
+                    }
+                } catch (Exception ignored) { }
+                return null;
             }
 
             @SuppressWarnings("deprecation")

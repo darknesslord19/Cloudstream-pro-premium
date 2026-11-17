@@ -85,6 +85,8 @@ jobs:
 
       - name: Build CloudStream TV (kabuk)
         run: |
+          # Arayüzün tek kaynağı CloudStream içindeki index.html; TV uygulaması kendi kopyasını taşır
+          cp app/src/main/assets/htmlapi/index.html tv-shell/app/src/main/assets/ui.html
           gradle -p tv-shell assembleRelease --no-daemon --stacktrace
           mkdir -p out
           cp tv-shell/app/build/outputs/apk/release/app-release.apk out/CloudStreamTV.apk
