@@ -26,3 +26,12 @@ Kod: `app/src/main/java/com/lagradost/cloudstream3/htmlapi/HtmlApiServer.kt`, ar
 ## Not
 
 Sunucunun parolası yok. Uygulama açıkken aynı ağdaki herkes bu adrese erişebilir, bu yüzden yalnızca güvendiğin ağlarda kullan.
+
+## CloudStream TV (kabuk uygulama) — `tv-shell/`
+
+TV kutusuna kurulan küçük uygulama. Açılışta yerel ağı tarar, telefondaki CloudStream'i bulur ve HTML arayüzünü açar. **Oynat**'a basınca video TV'nin kendi oynatıcısında (ExoPlayer) açılır:
+
+- Tarayıcının çözemediği biçimleri de oynatır (donanım çözücü olmazsa yazılım çözücüye geçer).
+- Önce doğrudan bağlantıyı dener, açılmazsa telefon üzerinden aktarıma geçer. Yukarıdaki **Kaynak** düğmesiyle elle de seçilebilir.
+- Kalite, ses ve altyazı seçimi oynatıcının menüsünden yapılır. Kumandada sol/sağ 10 sn sarar; kalınan yer kaydedilir.
+- Detay sayfası açılınca bağlantılar arka planda aranır. Arama sonuçları her eklentiden geldikçe ekrana düşer.

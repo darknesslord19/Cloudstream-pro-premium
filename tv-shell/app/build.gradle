@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNo = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+android {
+    namespace 'com.darknesslord.cstv'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.darknesslord.cstv'
+        minSdk 21
+        targetSdk 35
+        versionCode runNo
+        versionName "1.0.${runNo}"
+    }
+
+    signingConfigs {
+        cstv {
+            storeFile file('cstv.keystore')
+            storePassword 'cstv1234'
+            keyAlias 'cstv'
+            keyPassword 'cstv1234'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.cstv
+        }
+        debug {
+            signingConfig signingConfigs.cstv
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    def media3 = '1.5.1'
+    implementation "androidx.media3:media3-exoplayer:$media3"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3"
+    implementation "androidx.media3:media3-ui:$media3"
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation 'androidx.annotation:annotation-experimental:1.4.1'
+}

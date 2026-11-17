@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  cloudstream:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,29 +55,64 @@ jobs:
           sed -i 's|<string name="app_name">CloudStream Dark</string>|<string name="app_name">CloudStream HTML</string>|' app/src/main/res/values/strings.xml
           rm -rf app/build/outputs/apk
           ./gradlew assembleStableRelease -PhtmlSeparate=true --stacktrace
+          cp app/build/outputs/apk/stable/release/*.apk out/CloudStreamHTML-ayri.apk
+          git checkout app/src/main/res/values/strings.xml
+          cp app/src/main/assets/htmlapi/index.html out/CloudStream.html
+          ls -la out
         env:
           DARK_KEYSTORE_PASSWORD: ${{ secrets.DARK_KEYSTORE_PASSWORD }}
           DARK_KEY_ALIAS: ${{ secrets.DARK_KEY_ALIAS }}
           DARK_KEY_PASSWORD: ${{ secrets.DARK_KEY_PASSWORD }}
 
-      - name: Prepare files
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudstream
+          path: out/*
+
+  tv-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build CloudStream TV (kabuk)
         run: |
-          cp app/build/outputs/apk/stable/release/*.apk out/CloudStreamHTML-ayri.apk
-          cp app/src/main/assets/htmlapi/index.html out/CloudStream.html
+          gradle -p tv-shell assembleRelease --no-daemon --stacktrace
+          mkdir -p out
+          cp tv-shell/app/build/outputs/apk/release/app-release.apk out/CloudStreamTV.apk
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CloudStreamHTML
+          name: tv-shell
           path: out/*
+
+  release:
+    needs: [ cloudstream, tv-shell ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
 
       - name: Publish release (html-api)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          ls -la out
           gh release delete html-api --yes --cleanup-tag || true
-          gh release create html-api out/CloudStreamDark-HTML-guncelleme.apk out/CloudStreamHTML-ayri.apk out/CloudStream.html \
-            --title "CloudStream HTML (#${{ github.run_number }})" \
-            --notes "CloudStreamDark-HTML-guncelleme.apk: mevcut CloudStream Dark üzerine güncelleme olarak kurulur, eklentilerin ve ayarların korunur. CloudStreamHTML-ayri.apk: ayrı uygulama olarak kurulur (eklentileri yeniden eklemen gerekir). CloudStream.html: başka cihazda açılacak tek dosya." \
+          gh release create html-api out/CloudStreamTV.apk out/CloudStreamDark-HTML-guncelleme.apk out/CloudStreamHTML-ayri.apk out/CloudStream.html \
+            --title "CloudStream HTML + TV (#${{ github.run_number }})" \
+            --notes "CloudStreamTV.apk: TV kutusuna kurulur; telefondaki CloudStream'i ağda bulur, arayüz HTML, oynatma cihazın kendi oynatıcısında (ExoPlayer). CloudStreamDark-HTML-guncelleme.apk: telefondaki CloudStream Dark üzerine kurulur, eklentiler korunur. CloudStreamHTML-ayri.apk: ayrı uygulama olarak kurulur. CloudStream.html: tarayıcıda açılacak tek dosya." \
             --target "${{ github.sha }}" \
             --latest=false

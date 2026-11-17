@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -144,14 +145,14 @@ object HtmlApiServer {
         return Req(parts[0].uppercase(), path, query, headers)
     }
 
-    private fun writeHead(out: OutputStream, status: Int, headers: Map<String, String>) {
+    private fun writeHead(out: OutputStream, status: Int, headers: Map<String, String>, keepAlive: Boolean = false) {
         val sb = StringBuilder("HTTP/1.1 $status ${statusText(status)}\r\n")
         sb.append("Access-Control-Allow-Origin: *\r\n")
         sb.append("Access-Control-Allow-Headers: *\r\n")
         sb.append("Access-Control-Allow-Methods: GET, HEAD, OPTIONS\r\n")
         sb.append("Access-Control-Allow-Private-Network: true\r\n")
         sb.append("Access-Control-Expose-Headers: Content-Length, Content-Range\r\n")
-        sb.append("Connection: close\r\n")
+        sb.append(if (keepAlive) "Connection: keep-alive\r\nKeep-Alive: timeout=15\r\n" else "Connection: close\r\n")
         headers.forEach { (k, v) -> sb.append(k).append(": ").append(v).append("\r\n") }
         sb.append("\r\n")
         out.write(sb.toString().toByteArray(Charsets.UTF_8))
@@ -162,8 +163,8 @@ object HtmlApiServer {
         404 -> "Not Found"; 500 -> "Internal Server Error"; 502 -> "Bad Gateway"; else -> "Status"
     }
 
-    private fun send(out: OutputStream, status: Int, type: String, body: ByteArray, headOnly: Boolean = false) {
-        writeHead(out, status, mapOf("Content-Type" to type, "Content-Length" to body.size.toString(), "Cache-Control" to "no-store"))
+    private fun send(out: OutputStream, status: Int, type: String, body: ByteArray, headOnly: Boolean = false, keep: Boolean = true) {
+        writeHead(out, status, mapOf("Content-Type" to type, "Content-Length" to body.size.toString(), "Cache-Control" to "no-store"), keepAlive = keep)
         if (!headOnly) out.write(body)
         out.flush()
     }
@@ -177,15 +178,22 @@ object HtmlApiServer {
     private suspend fun handle(socket: Socket) {
         socket.use { s ->
             try {
-                s.soTimeout = 30_000
+                s.tcpNoDelay = true
                 val input = BufferedInputStream(s.getInputStream())
-                val out = s.getOutputStream()
-                val req = readRequest(input) ?: return
-                if (req.method == "OPTIONS") {
-                    writeHead(out, 204, mapOf("Content-Length" to "0")); out.flush(); return
+                val out = java.io.BufferedOutputStream(s.getOutputStream(), 64 * 1024)
+                // HTTP keep-alive: aynı bağlantı üzerinden art arda istek (her istekte yeni bağlantı kurulmaz)
+                while (true) {
+                    s.soTimeout = 15_000
+                    val req = readRequest(input) ?: return
+                    if (req.method == "OPTIONS") {
+                        writeHead(out, 204, mapOf("Content-Length" to "0"), keepAlive = true); out.flush(); continue
+                    }
+                    s.soTimeout = 0
+                    route(req, out)
+                    out.flush()
+                    // Akış aktarımı (proxy) bağlantıyı kapatır; diğer yanıtlar bağlantıyı açık tutar
+                    if (req.path == "/proxy" || req.headers["connection"].equals("close", true)) return
                 }
-                s.soTimeout = 0
-                route(req, out)
             } catch (t: Throwable) {
                 Log.w(TAG, "İstek hatası: ${t.message}")
             }
@@ -217,7 +225,8 @@ object HtmlApiServer {
                 })
                 "/api/home" -> {
                     val api = apiOf(q["provider"]) ?: return sendError(out, 404, "Eklenti bulunamadı")
-                    sendJson(out, home(api, q["page"]?.toIntOrNull() ?: 1))
+                    val page = q["page"]?.toIntOrNull() ?: 1
+                    sendJson(out, cached("home|${api.name}|$page", 10 * 60_000, q["fresh"] == "1") { home(api, page) })
                 }
                 "/api/search" -> {
                     val query = q["q"]?.trim().orEmpty()
@@ -236,7 +245,8 @@ object HtmlApiServer {
                 "/api/links" -> {
                     val api = apiOf(q["provider"]) ?: return sendError(out, 404, "Eklenti bulunamadı")
                     val data = q["data"] ?: return sendError(out, 400, "data yok")
-                    sendJson(out, links(api, data))
+                    // Bağlantılar birkaç dakika saklanır: ön yükleme + oynat aynı anda gelirse tek arama yapılır
+                    sendJson(out, cached("links|${api.name}|$data", 4 * 60_000, q["fresh"] == "1") { links(api, data) })
                 }
                 "/proxy" -> proxy(req, out)
                 else -> sendError(out, 404, "Bulunamadı")
@@ -263,6 +273,31 @@ object HtmlApiServer {
     /** Oynatılan bağlantılar: eklentinin video interceptor'ı proxy'de uygulanabilsin diye. */
     private val linkSeq = AtomicLong(0)
     private val linkMap = ConcurrentHashMap<String, Pair<MainAPI, ExtractorLink>>()
+
+    /** Basit süreli önbellek + aynı anda gelen aynı isteği tek işe indirme. */
+    private class Cached(val time: Long, val value: JSONObject)
+    private val cache = ConcurrentHashMap<String, Cached>()
+    private val inflight = ConcurrentHashMap<String, Deferred<JSONObject>>()
+
+    private suspend fun cached(key: String, ttlMs: Long, fresh: Boolean, block: suspend () -> JSONObject): JSONObject {
+        val now = System.currentTimeMillis()
+        if (!fresh) cache[key]?.let { if (now - it.time < ttlMs) return it.value }
+        val job = inflight.getOrPut(key) {
+            scope.async {
+                try {
+                    block().also { v ->
+                        if (v.optString("error", "").isEmpty() && v.optBoolean("cacheable", true)) {
+                            cache[key] = Cached(System.currentTimeMillis(), v)
+                        }
+                    }
+                } finally {
+                    inflight.remove(key)
+                }
+            }
+        }
+        if (cache.size > 300) cache.entries.sortedBy { it.value.time }.take(100).forEach { cache.remove(it.key) }
+        return job.await()
+    }
 
     private fun apiOf(name: String?): MainAPI? =
         if (name.isNullOrBlank()) null else providers().firstOrNull { it.name == name }
@@ -361,7 +396,7 @@ object HtmlApiServer {
         } catch (t: Throwable) {
             Log.w(TAG, "loadLinks: $t")
         }
-        if (linkMap.size > 500) linkMap.clear()
+        if (linkMap.size > 3000) linkMap.keys.sortedBy { it.toLongOrNull() ?: 0 }.take(1500).forEach { linkMap.remove(it) }
         val linkArr = JSONArray()
         synchronized(links) {
             links.distinctBy { it.url }.sortedByDescending { it.quality }.forEach { l ->
@@ -388,7 +423,7 @@ object HtmlApiServer {
                     .put("proxy", proxyPath(s.url, h) + "&vtt=1"))
             }
         }
-        return JSONObject().put("links", linkArr).put("subtitles", subArr)
+        return JSONObject().put("links", linkArr).put("subtitles", subArr).put("cacheable", linkArr.length() > 0)
     }
 
     // ------------------------------------------------------------------ Proxy
@@ -437,7 +472,7 @@ object HtmlApiServer {
                     text = "WEBVTT\n\n" + text.replace("\r", "")
                         .replace(Regex("(\\d{2}:\\d{2}:\\d{2}),(\\d{3})"), "$1.$2")
                 }
-                return send(out, resp.code, "text/vtt; charset=utf-8", text.toByteArray(Charsets.UTF_8))
+                return send(out, resp.code, "text/vtt; charset=utf-8", text.toByteArray(Charsets.UTF_8), keep = false)
             }
 
             if (looksHls && resp.isSuccessful) {
@@ -445,9 +480,9 @@ object HtmlApiServer {
                 val text = body.string()
                 if (text.trimStart().startsWith("#EXTM3U")) {
                     val rewritten = rewritePlaylist(text, finalUrl, headers, linkId)
-                    return send(out, 200, "application/vnd.apple.mpegurl", rewritten.toByteArray(Charsets.UTF_8))
+                    return send(out, 200, "application/vnd.apple.mpegurl", rewritten.toByteArray(Charsets.UTF_8), keep = false)
                 }
-                return send(out, resp.code, type.ifEmpty { "application/octet-stream" }, text.toByteArray(Charsets.UTF_8))
+                return send(out, resp.code, type.ifEmpty { "application/octet-stream" }, text.toByteArray(Charsets.UTF_8), keep = false)
             }
 
             val h = mutableMapOf("Content-Type" to type.ifEmpty { "application/octet-stream" }, "Accept-Ranges" to "bytes")

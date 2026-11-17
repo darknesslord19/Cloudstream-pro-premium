@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudStream TV</title>
+<style>
+:root{--bg:#0b0b0f;--panel:#16161d;--panel2:#20202a;--text:#ececf1;--muted:#9a9aa8;--accent:#e50914}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:24px}
+.box{width:100%;max-width:640px}
+h1{font-size:34px;margin:0 0 6px}h1 span{color:var(--accent)}
+p{color:var(--muted);line-height:1.6;margin:6px 0}
+.st{margin:22px 0 10px;font-weight:600;color:var(--muted)}
+button,input{font:inherit;color:inherit}
+.srv{display:block;width:100%;text-align:left;padding:16px 18px;margin:8px 0;border-radius:10px;border:0;background:var(--panel);font-size:18px}
+.srv small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.srv:focus,.btn:focus,input:focus{outline:3px solid #fff;outline-offset:2px}
+.row{display:flex;gap:10px;margin-top:10px}
+input{flex:1;min-width:0;background:var(--panel2);border:1px solid #2c2c38;border-radius:10px;padding:14px;font-size:17px}
+.btn{border:0;border-radius:10px;padding:14px 20px;background:#fff;color:#000;font-weight:700;font-size:16px}
+.btn.g{background:var(--panel2);color:var(--text)}
+.err{color:#ff6b6b}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #555;border-top-color:#fff;border-radius:50%;animation:r 0.8s linear infinite;vertical-align:-2px;margin-right:8px}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Cloud<span>Stream</span> TV</h1>
+  <p>Telefondaki CloudStream uygulamasını aç. İki cihaz aynı Wi-Fi ağında olmalı.</p>
+  <p id="msg" class="err"></p>
+  <div class="st" id="state"></div>
+  <div id="list"></div>
+  <div class="st">Adresi elle gir</div>
+  <div class="row">
+    <input id="ip" type="text" inputmode="url" placeholder="192.168.1.25">
+    <button class="btn" id="go">Bağlan</button>
+  </div>
+  <div class="row"><button class="btn g" id="rescan">↻ Yeniden tara</button></div>
+</div>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const q = new URLSearchParams(location.search);
+const shell = window.CSShell;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if (q.get('msg')) $('#msg').textContent = q.get('msg');
+
+function norm(v) {
+  v = v.trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//.test(v)) v = 'http://' + v;
+  if (!/:\d+$/.test(v)) v += ':8686';
+  return v;
+}
+function scan() {
+  $('#state').innerHTML = '<span class="spin"></span>Ağda CloudStream aranıyor…';
+  $('#list').innerHTML = '';
+  shell && shell.scan();
+}
+window.__scanResult = (found, own) => {
+  const last = shell ? shell.lastServer() : '';
+  if (!found.length) {
+    $('#state').innerHTML = `Bulunamadı. <span style="font-weight:400">(Bu cihaz: ${esc(own || 'ağ yok')})</span>`;
+    $('#ip').focus();
+    return;
+  }
+  // Tek telefon bulunduysa ve elle açılmadıysa doğrudan bağlan
+  if (found.length === 1 && !q.get('manual')) { shell.connect(found[0]); return; }
+  $('#state').textContent = 'Bulunanlar';
+  $('#list').innerHTML = found.map(u => `<button class="srv" data-u="${esc(u)}">${esc(u.replace('http://', ''))}${u === last ? '<small>son kullanılan</small>' : ''}</button>`).join('');
+  $('#list .srv').focus();
+};
+window.__checkResult = (url, ok) => {
+  if (ok) shell.connect(url);
+  else scan();
+};
+$('#list').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) shell.connect(b.dataset.u); });
+$('#go').onclick = () => {
+  const v = $('#ip').value; if (!v.trim()) return;
+  const u = norm(v);
+  $('#state').innerHTML = `<span class="spin"></span>${esc(u)} deneniyor…`;
+  window.__checkResult = (url, ok) => {
+    if (ok) shell.connect(url);
+    else $('#state').innerHTML = `<span class="err">${esc(url)} yanıt vermedi.</span>`;
+  };
+  shell.check(u);
+};
+$('#ip').addEventListener('keydown', e => { if (e.key === 'Enter') $('#go').click(); });
+$('#rescan').onclick = scan;
+
+// Basit kumanda gezintisi: yukarı/aşağı
+document.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const els = [...document.querySelectorAll('button,input')];
+  const i = els.indexOf(document.activeElement);
+  const n = els[Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+  if (n) { n.focus(); e.preventDefault(); }
+});
+
+if (!shell) {
+  $('#state').textContent = 'Bu sayfa CloudStream TV uygulaması içinde çalışır.';
+} else {
+  const last = shell.lastServer();
+  if (last && !q.get('manual') && !q.get('msg')) {
+    $('#state').innerHTML = `<span class="spin"></span>${esc(last)} bağlanıyor…`;
+    shell.check(last);
+  } else {
+    if (last) $('#ip').value = last.replace('http://', '').replace(':8686', '');
+    scan();
+  }
+}
+setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) $('#ip').focus(); }, 300);
+</script>
+</body>
+</html>

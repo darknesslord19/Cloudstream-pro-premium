@@ -48,6 +48,9 @@ select{max-width:46vw}#q{flex:1;min-width:140px}
 .player video{flex:1;width:100%;min-height:0;background:#000}
 .pbar{display:flex;gap:6px;align-items:center;padding:8px 12px;overflow-x:auto;background:#111}
 .pbar .chip{white-space:nowrap}.ptitle{padding:10px 60px 6px 14px;font-weight:600}
+.sk .poster{background:linear-gradient(90deg,#1b1b24 0%,#262632 50%,#1b1b24 100%);background-size:200% 100%;animation:sh 1.2s infinite linear}
+.sk .name{height:12px;width:70%;background:#1f1f29;border-radius:4px}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#2a2a35;padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw;box-shadow:0 4px 20px #0008}
 .box{max-width:520px;margin:40px auto;padding:20px;background:var(--panel);border-radius:12px}
 .box input{width:100%;background:var(--panel2);border:1px solid #2c2c38;border-radius:8px;padding:12px;font-size:15px;margin:10px 0}
@@ -81,7 +84,9 @@ let providers = [];
 /* ---------- Sunucu ---------- */
 async function api(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
-  const r = await fetch(BASE + path + (qs ? '?' + qs : ''));
+  let r;
+  try { r = await fetch(BASE + path + (qs ? '?' + qs : '')); }
+  catch (e) { throw new Error('Telefona ulaşılamıyor (uygulama açık mı, aynı Wi-Fi\'da mı?)'); }
   const j = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
   if (!r.ok || j.error) throw new Error(j.error || 'HTTP ' + r.status);
   return j;
@@ -114,6 +119,8 @@ async function connect() {
   loadHome();
 }
 function askServer(prev = '', err = '') {
+  // TV kabuğunda sunucu seçimi uygulamanın kendi ekranında yapılır
+  if (window.CSShell && window.CSShell.home) { window.CSShell.home(); return; }
   closeAll();
   $('#main').innerHTML = `<div class="box"><h2 style="margin-top:0">CloudStream'e bağlan</h2>
     <p class="note">Telefonda / TV'de <b>CloudStream HTML</b> uygulamasını aç. Açılışta ekranda gösterilen adresi buraya yaz
@@ -162,31 +169,55 @@ function row(title, list, sub = '', horizontal = false) {
 }
 
 /* ---------- Ana sayfa & arama ---------- */
+const homeMem = new Map();
+function skeleton(rows = 3) {
+  const c = '<div class="card sk"><div class="poster"></div><div class="name" style="margin-top:8px"></div></div>';
+  return Array.from({ length: rows }, () => `<section class="row"><h2>&nbsp;</h2><div class="strip">${c.repeat(8)}</div></section>`).join('');
+}
 async function loadHome() {
   const p = $('#prov').value; LS.set('prov', p);
   const main = $('#main');
-  main.innerHTML = `<div class="msg">${esc(p)} yükleniyor…</div>`;
+  main.innerHTML = skeleton();
   const prov = providers.find(x => x.name === p);
   if (!prov) { main.innerHTML = '<div class="msg">CloudStream\'de kurulu eklenti yok. Uygulamada bir depo ve eklenti ekle.</div>'; return; }
   let html = row('İzlemeye devam et', continueList(), '', false);
   if (!prov.hasMainPage) { main.innerHTML = html + '<div class="msg">Bu eklentinin ana sayfası yok. Yukarıdan arama yapabilirsin.</div>'; return; }
+  main.innerHTML = html + skeleton();
   try {
-    const r = await api('/api/home', { provider: p });
-    if ($('#prov').value !== p) return;
+    const mem = homeMem.get(p);
+    const r = mem && Date.now() - mem.t < 5 * 60e3 ? mem.r : await api('/api/home', { provider: p });
+    if (r.lists && r.lists.length) homeMem.set(p, { t: mem && mem.r === r ? mem.t : Date.now(), r });
+    if ($('#prov').value !== p || $('#q').value.trim()) return;
     html += r.lists.map(l => row(l.name, l.items, '', l.horizontal)).join('');
     main.innerHTML = html || `<div class="msg">${r.error ? 'Eklenti hatası: ' + esc(r.error) : 'Ana sayfa boş geldi.'}</div>`;
   } catch (e) { main.innerHTML = html + `<div class="msg">Yüklenemedi: ${esc(e.message)}</div>`; }
 }
+let searchToken = 0;
 async function doSearch() {
   const q = $('#q').value.trim();
   if (!q) return loadHome();
+  const token = ++searchToken;
   const main = $('#main');
-  main.innerHTML = `<div class="msg">“${esc(q)}” ${providers.length} eklentide aranıyor…</div>`;
-  try {
-    const groups = await api('/api/search', { q });
-    if ($('#q').value.trim() !== q) return;
-    main.innerHTML = groups.length ? groups.map(g => row(g.provider, g.items, g.items.length + ' sonuç')).join('') : '<div class="msg">Sonuç yok.</div>';
-  } catch (e) { main.innerHTML = `<div class="msg">Arama hatası: ${esc(e.message)}</div>`; }
+  main.innerHTML = `<div class="msg" id="sstat" style="padding:14px 16px;text-align:left">“${esc(q)}” aranıyor… 0/${providers.length} eklenti</div><div id="sres"></div>`;
+  // Her eklenti ayrı istenir; sonuçlar geldikçe ekrana düşer (en yavaş eklenti beklenmez)
+  const queue = providers.slice();
+  let done = 0, found = 0;
+  const worker = async () => {
+    while (queue.length) {
+      const p = queue.shift();
+      try {
+        const groups = await api('/api/search', { q, provider: p.name });
+        if (token !== searchToken) return;
+        groups.forEach(g => { if (g.items.length) { found++; $('#sres').insertAdjacentHTML('beforeend', row(g.provider, g.items, g.items.length + ' sonuç')); } });
+      } catch (e) { /* bu eklenti başarısız: diğerleri devam eder */ }
+      if (token !== searchToken) return;
+      done++;
+      $('#sstat').textContent = done < providers.length
+        ? `“${q}” aranıyor… ${done}/${providers.length} eklenti`
+        : (found ? `“${q}”: ${found} eklentide sonuç` : `“${q}”: sonuç yok`);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, queue.length) }, worker));
 }
 
 /* ---------- İzleme geçmişi ---------- */
@@ -219,6 +250,23 @@ function popLayer() {
   return true;
 }
 function closeAll() { while (popLayer()); }
+// Kabuk uygulamanın Geri tuşu: açık katman varsa onu kapatır
+window.__onBack = () => popLayer();
+
+/* ---------- Bağlantılar (ön yükleme) ---------- */
+const linkMem = new Map();
+function getLinks(provider, data, fresh) {
+  const k = provider + '|' + data;
+  const e = linkMem.get(k);
+  if (!fresh && e && Date.now() - e.t < 4 * 60e3) return e.p;
+  const p = api('/api/links', fresh ? { provider, data, fresh: 1 } : { provider, data });
+  linkMem.set(k, { t: Date.now(), p });
+  p.then(r => { if (!(r.links || []).length) linkMem.delete(k); }, () => linkMem.delete(k));
+  return p;
+}
+const prefetch = (provider, data) => { if (data) getLinks(provider, data).catch(() => {}); };
+const absUrl = u => new URL(u, location.href).href;
+const labelOf = l => `${l.name}${l.quality > 0 ? ' ' + l.quality + 'p' : ''}`;
 
 /* ---------- Detay ---------- */
 async function openItem(it) {
@@ -239,10 +287,17 @@ async function openItem(it) {
     ${row('Benzerleri', d.recommendations || [])}`;
   const act = $('#act', el);
   if (d.kind === 'movie' || d.kind === 'live') {
-    const p = prog()[d.data];
-    const resume = p && p.pos / p.dur < 0.95;
-    act.innerHTML = `<div style="margin:16px 0"><button class="btn p" data-play>▶ ${resume ? 'Devam et' : 'Oynat'}</button>
-      ${resume ? '<button class="btn" data-restart>Baştan</button>' : ''}</div>`;
+    const drawMovie = () => {
+      const p = prog()[d.data];
+      const resume = p && p.pos / p.dur < 0.95;
+      const f = document.activeElement && document.activeElement.closest && document.activeElement.closest('#act');
+      act.innerHTML = `<div style="margin:16px 0"><button class="btn p" data-play>▶ ${resume ? 'Devam et' : 'Oynat'}</button>
+        ${resume ? '<button class="btn" data-restart>Baştan</button>' : ''}</div>`;
+      if (f) act.querySelector('[data-play]').focus();
+    };
+    drawMovie();
+    el.redraw = drawMovie;
+    prefetch(it.provider, d.data);   // Oynat'a basmadan bağlantılar aranmaya başlar
     act.onclick = e => {
       if (e.target.closest('[data-play]')) play(it.provider, d.data, d.name, itemRef);
       if (e.target.closest('[data-restart]')) play(it.provider, d.data, d.name, itemRef, true);
@@ -266,6 +321,13 @@ async function openItem(it) {
     };
     draw();
     el.redraw = draw;
+    // Sıradaki bölümün bağlantılarını önceden ara: yarım kalan son bölüm, yoksa ilk bölüm
+    {
+      const pm = prog();
+      const started = eps.filter(e => pm[e.data] && pm[e.data].pos / pm[e.data].dur < 0.95).sort((a, b) => pm[b.data].t - pm[a.data].t)[0];
+      const first = eps.find(e => (!dub || e.dub === dub) && (e.season ?? 1) === season);
+      prefetch(it.provider, (started || first || {}).data);
+    }
     act.onclick = e => {
       const dd = e.target.closest('[data-dub]'); if (dd) { dub = dd.dataset.dub; season = seasonsOf()[0]; draw(); return; }
       const s = e.target.closest('[data-season]'); if (s) { season = Number(s.dataset.season); draw(); return; }
@@ -285,12 +347,38 @@ function loadScript(src, globalName) {
   if (window[globalName]) return Promise.resolve();
   return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src + ' yüklenemedi')); document.head.appendChild(s); });
 }
+/* Kabuk uygulamada (CloudStream TV) video cihazın kendi oynatıcısında (ExoPlayer) açılır */
+const pendingNative = {};
+window.__onPlayerClosed = (key, posMs, durMs) => {
+  const item = pendingNative[key];
+  saveProg(key, posMs / 1000, durMs / 1000, { item });
+  const top = layers[layers.length - 1]; if (top && top.el.redraw) top.el.redraw();
+};
+async function playNative(provider, data, title, item, restart) {
+  const el = pushLayer(`<div class="msg" style="padding-top:100px">Bağlantılar aranıyor…<br><small>${esc(title)}</small></div>`);
+  let res;
+  try { res = await getLinks(provider, data); }
+  catch (e) { el.querySelector('.msg').textContent = 'Hata: ' + e.message; return; }
+  if (!document.contains(el)) return;
+  const links = (res.links || []).filter(l => l.type !== 'TORRENT');
+  if (!links.length) { el.querySelector('.msg').textContent = 'Oynatılabilir bağlantı bulunamadı.'; return; }
+  const p = prog()[data];
+  const start = !restart && p && p.pos / p.dur < 0.95 ? Math.floor(p.pos * 1000) : 0;
+  // Önce doğrudan bağlantılar (hızlı, telefonu yormaz), açılmazsa telefon üzerinden aktarım
+  const sources = links.map(l => ({ name: labelOf(l), url: l.url, headers: l.headers || {}, type: l.type }))
+    .concat(links.map(l => ({ name: labelOf(l) + ' · telefon üzerinden', url: absUrl(BASE + l.proxy), headers: {}, type: l.type })));
+  const subtitles = (res.subtitles || []).map(s => ({ lang: s.lang, url: absUrl(BASE + s.proxy) }));
+  pendingNative[data] = item;
+  popLayer();
+  window.CSShell.play(JSON.stringify({ key: data, title, start, sources, subtitles }));
+}
 async function play(provider, data, title, item, restart) {
+  if (window.CSShell) return playNative(provider, data, title, item, restart);
   const el = pushLayer(`<div class="ptitle">${esc(title)}</div><video controls autoplay playsinline></video>
     <div class="pbar"><span class="note">Bağlantılar aranıyor… (eklentiye göre 5-60 sn)</span></div>`, 'player');
   const v = $('video', el), bar = $('.pbar', el);
   let res;
-  try { res = await api('/api/links', { provider, data }); }
+  try { res = await getLinks(provider, data); }
   catch (e) { bar.innerHTML = `<span class="note">Hata: ${esc(e.message)}</span>`; return; }
   if (!document.contains(el)) return;
   const links = (res.links || []).filter(l => l.type !== 'TORRENT');
@@ -298,7 +386,7 @@ async function play(provider, data, title, item, restart) {
   const p = prog()[data];
   let startAt = !restart && p && p.pos / p.dur < 0.95 ? p.pos : 0;
   let cur = -1;
-  const label = l => `${l.name}${l.quality > 0 ? ' ' + l.quality + 'p' : ''}`;
+  const label = labelOf;
   const drawBar = () => {
     bar.innerHTML = links.map((l, i) => `<button class="chip ${i === cur ? 'on' : ''}" data-l="${i}">${esc(label(l))}</button>`).join('')
       + `<button class="chip" data-copy>Adresi kopyala</button>`;
