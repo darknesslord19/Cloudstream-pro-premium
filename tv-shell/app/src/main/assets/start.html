@@ -5,26 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CloudStream TV</title>
 <style>
-:root{--bg:#0b0b0f;--panel:#16161d;--panel2:#20202a;--text:#ececf1;--muted:#9a9aa8;--accent:#e50914}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{display:flex;align-items:center;justify-content:center;padding:24px}
-.box{width:100%;max-width:640px}
-h1{font-size:34px;margin:0 0 6px}h1 span{color:var(--accent)}
-p{color:var(--muted);line-height:1.6;margin:6px 0}
-.st{margin:22px 0 10px;font-weight:600;color:var(--muted)}
-button,input{font:inherit;color:inherit}
-.srv{display:block;width:100%;text-align:left;padding:16px 18px;margin:8px 0;border-radius:10px;border:0;background:var(--panel);font-size:18px}
-.srv small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
-.srv:focus,.btn:focus,input:focus{outline:3px solid #fff;outline-offset:2px}
-.row{display:flex;gap:10px;margin-top:10px}
-input{flex:1;min-width:0;background:var(--panel2);border:1px solid #2c2c38;border-radius:10px;padding:14px;font-size:17px}
-.btn{border:0;border-radius:10px;padding:14px 20px;background:#fff;color:#000;font-weight:700;font-size:16px}
-.btn.g{background:var(--panel2);color:var(--text)}
-.err{color:#ff6b6b}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid #555;border-top-color:#fff;border-radius:50%;animation:r 0.8s linear infinite;vertical-align:-2px;margin-right:8px}
-@keyframes r{to{transform:rotate(360deg)}}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0b0b0f; color: #ececf1; font-family: sans-serif; }
+.box { max-width: 680px; margin: 0 auto; padding: 40px 24px; }
+h1 { font-size: 34px; margin: 0 0 6px; }
+h1 span { color: #e50914; }
+p { color: #9a9aa8; line-height: 1.6; margin: 6px 0; }
+.st { margin: 22px 0 10px; font-weight: bold; color: #9a9aa8; }
+button, input { font-family: inherit; color: inherit; }
+.srv { display: block; width: 100%; text-align: left; padding: 16px 18px; margin: 8px 0; border-radius: 10px; border: 3px solid transparent; background: #16161d; font-size: 18px; color: #ececf1; }
+.srv small { display: block; color: #9a9aa8; font-size: 13px; margin-top: 4px; }
+.row { margin-top: 10px; }
+.row:after { content: ""; display: table; clear: both; }
+input { width: 64%; float: left; background: #20202a; border: 3px solid #2c2c38; border-radius: 10px; padding: 12px; font-size: 18px; color: #ececf1; }
+.btn { border: 3px solid transparent; border-radius: 10px; padding: 12px 20px; background: #fff; color: #000; font-weight: bold; font-size: 17px; margin-left: 10px; }
+.btn.g { background: #20202a; color: #ececf1; margin-left: 0; }
+.srv:focus, .btn:focus, input:focus { border-color: #e50914; outline: none; }
+.err { color: #ff6b6b; }
+.foot { margin-top: 30px; font-size: 12px; color: #6a6a78; }
 </style>
+<script>
+/* Eski WebView'lerde bile hata görünür olsun */
+window.onerror = function (msg, src, line) {
+  var el = document.getElementById('msg');
+  if (el) el.innerHTML = 'Sayfa hatası: ' + msg + ' (satır ' + line + ')';
+};
+</script>
 </head>
 <body>
 <div class="box">
@@ -35,83 +41,121 @@ input{flex:1;min-width:0;background:var(--panel2);border:1px solid #2c2c38;borde
   <div id="list"></div>
   <div class="st">Adresi elle gir</div>
   <div class="row">
-    <input id="ip" type="text" inputmode="url" placeholder="192.168.1.25">
+    <input id="ip" type="text" placeholder="192.168.1.25">
     <button class="btn" id="go">Bağlan</button>
   </div>
-  <div class="row"><button class="btn g" id="rescan">↻ Yeniden tara</button></div>
+  <div class="row"><button class="btn g" id="rescan">Yeniden tara</button></div>
+  <div class="foot" id="foot"></div>
 </div>
 <script>
-'use strict';
-const $ = s => document.querySelector(s);
-const q = new URLSearchParams(location.search);
-const shell = window.CSShell;
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-if (q.get('msg')) $('#msg').textContent = q.get('msg');
+/* Bilerek eski JavaScript (ES5) ile yazıldı: eski TV WebView'lerinde de çalışsın */
+var shell = window.CSShell;
+var manual = location.search.indexOf('manual=1') >= 0;
+var hasMsg = location.search.indexOf('msg=') >= 0;
 
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function param(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
 function norm(v) {
-  v = v.trim().replace(/\/+$/, '');
+  v = v.replace(/^\s+|\s+$/g, '').replace(/\/+$/, '');
   if (!/^https?:\/\//.test(v)) v = 'http://' + v;
   if (!/:\d+$/.test(v)) v += ':8686';
   return v;
 }
+function setState(html) { $('state').innerHTML = html; }
+
+if (param('msg')) $('msg').innerHTML = esc(param('msg'));
+
+/* WebView sürümü: çok eskiyse uyar */
+var cm = /Chrome\/(\d+)/.exec(navigator.userAgent);
+var chromeVer = cm ? parseInt(cm[1], 10) : 0;
+$('foot').innerHTML = 'WebView: ' + (chromeVer ? 'Chrome ' + chromeVer : 'bilinmiyor') +
+  (chromeVer && chromeVer < 58 ? ' — <span class="err">çok eski. Play Store\'dan "Android System WebView" güncellemesi gerekir.</span>' : '');
+
 function scan() {
-  $('#state').innerHTML = '<span class="spin"></span>Ağda CloudStream aranıyor…';
-  $('#list').innerHTML = '';
-  shell && shell.scan();
+  setState('Ağda CloudStream aranıyor… (birkaç saniye)');
+  $('list').innerHTML = '';
+  if (shell) shell.scan();
 }
-window.__scanResult = (found, own) => {
-  const last = shell ? shell.lastServer() : '';
+
+window.__scanResult = function (found, own) {
+  var last = shell ? shell.lastServer() : '';
   if (!found.length) {
-    $('#state').innerHTML = `Bulunamadı. <span style="font-weight:400">(Bu cihaz: ${esc(own || 'ağ yok')})</span>`;
-    $('#ip').focus();
+    setState('Bulunamadı. <span style="font-weight:normal">(Bu cihaz: ' + esc(own || 'ağ yok') + ')</span>');
+    $('ip').focus();
     return;
   }
-  // Tek telefon bulunduysa ve elle açılmadıysa doğrudan bağlan
-  if (found.length === 1 && !q.get('manual')) { shell.connect(found[0]); return; }
-  $('#state').textContent = 'Bulunanlar';
-  $('#list').innerHTML = found.map(u => `<button class="srv" data-u="${esc(u)}">${esc(u.replace('http://', ''))}${u === last ? '<small>son kullanılan</small>' : ''}</button>`).join('');
-  $('#list .srv').focus();
+  if (found.length === 1 && !manual) { setState('Bulundu, bağlanıyor…'); shell.connect(found[0]); return; }
+  setState('Bulunanlar');
+  var html = '';
+  for (var i = 0; i < found.length; i++) {
+    html += '<button class="srv" data-u="' + esc(found[i]) + '">' + esc(found[i].replace('http://', '')) +
+      (found[i] === last ? '<small>son kullanılan</small>' : '') + '</button>';
+  }
+  $('list').innerHTML = html;
+  var first = $('list').getElementsByTagName('button')[0];
+  if (first) first.focus();
 };
-window.__checkResult = (url, ok) => {
-  if (ok) shell.connect(url);
-  else scan();
-};
-$('#list').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) shell.connect(b.dataset.u); });
-$('#go').onclick = () => {
-  const v = $('#ip').value; if (!v.trim()) return;
-  const u = norm(v);
-  $('#state').innerHTML = `<span class="spin"></span>${esc(u)} deneniyor…`;
-  window.__checkResult = (url, ok) => {
-    if (ok) shell.connect(url);
-    else $('#state').innerHTML = `<span class="err">${esc(url)} yanıt vermedi.</span>`;
-  };
-  shell.check(u);
-};
-$('#ip').addEventListener('keydown', e => { if (e.key === 'Enter') $('#go').click(); });
-$('#rescan').onclick = scan;
 
-// Basit kumanda gezintisi: yukarı/aşağı
-document.addEventListener('keydown', e => {
-  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-  const els = [...document.querySelectorAll('button,input')];
-  const i = els.indexOf(document.activeElement);
-  const n = els[Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+var onCheck = function (url, ok) { if (ok) shell.connect(url); else scan(); };
+window.__checkResult = function (url, ok) { onCheck(url, ok); };
+
+$('list').onclick = function (e) {
+  var t = e.target;
+  while (t && t !== this && !t.getAttribute('data-u')) t = t.parentNode;
+  if (t && t.getAttribute && t.getAttribute('data-u')) {
+    setState('Bağlanıyor…');
+    shell.connect(t.getAttribute('data-u'));
+  }
+};
+
+$('go').onclick = function () {
+  var v = $('ip').value;
+  if (!v.replace(/\s/g, '')) { $('ip').focus(); return; }
+  var u = norm(v);
+  setState(esc(u) + ' deneniyor…');
+  onCheck = function (url, ok) {
+    if (ok) { setState('Bağlanıyor…'); shell.connect(url); }
+    else setState('<span class="err">' + esc(url) + ' yanıt vermedi. Telefonda uygulama açık mı?</span>');
+  };
+  if (shell) shell.check(u);
+};
+$('ip').onkeydown = function (e) { if (e.keyCode === 13) $('go').onclick(); };
+$('rescan').onclick = function () { onCheck = function (url, ok) { if (ok) shell.connect(url); else scan(); }; scan(); };
+
+/* Kumanda: yukarı/aşağı ile düğmeler arasında gez */
+document.addEventListener('keydown', function (e) {
+  var k = e.keyCode;
+  if (k !== 38 && k !== 40) return;
+  var els = document.querySelectorAll('button, input');
+  var i = -1;
+  for (var j = 0; j < els.length; j++) if (els[j] === document.activeElement) i = j;
+  var n = els[Math.max(0, Math.min(els.length - 1, i + (k === 40 ? 1 : -1)))];
   if (n) { n.focus(); e.preventDefault(); }
 });
 
 if (!shell) {
-  $('#state').textContent = 'Bu sayfa CloudStream TV uygulaması içinde çalışır.';
+  setState('Bu sayfa CloudStream TV uygulaması içinde çalışır.');
 } else {
-  const last = shell.lastServer();
-  if (last && !q.get('manual') && !q.get('msg')) {
-    $('#state').innerHTML = `<span class="spin"></span>${esc(last)} bağlanıyor…`;
+  var last = shell.lastServer();
+  if (last) $('ip').value = last.replace('http://', '').replace(':8686', '');
+  if (last && !manual && !hasMsg) {
+    setState(esc(last) + ' bağlanıyor…');
     shell.check(last);
   } else {
-    if (last) $('#ip').value = last.replace('http://', '').replace(':8686', '');
     scan();
   }
 }
-setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) $('#ip').focus(); }, 300);
+setTimeout(function () {
+  if (!document.activeElement || document.activeElement === document.body) $('go').focus();
+}, 300);
 </script>
 </body>
 </html>

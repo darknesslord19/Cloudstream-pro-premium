@@ -11,46 +11,47 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 body{padding-bottom:40px}
 button,select,input{font:inherit;color:inherit}
 button{background:none;border:0;cursor:pointer}
-:focus{outline:none}:focus-visible{outline:3px solid #fff;outline-offset:2px}
+:focus{outline:none}button:focus,select:focus,input:focus{outline:3px solid #fff;outline-offset:2px}
 .hidden{display:none!important}
-.top{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(var(--bg) 75%,transparent)}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(var(--bg) 75%,transparent)}
 .logo{font-weight:800;font-size:19px;white-space:nowrap;padding:4px}.logo span{color:var(--accent)}
 select,#q{background:var(--panel2);border:1px solid #2c2c38;border-radius:999px;padding:9px 14px;font-size:14px;min-width:0}
 select{max-width:46vw}#q{flex:1;min-width:140px}
 .icon{width:40px;height:40px;border-radius:50%;background:var(--panel2);font-size:18px}
 .msg{color:var(--muted);padding:40px 16px;text-align:center;line-height:1.6}
 .row{margin:12px 0 4px}.row h2{font-size:16px;margin:0 0 8px;padding:0 16px}.row h2 small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
-.strip{display:flex;gap:10px;overflow-x:auto;padding:4px 16px 10px;scroll-padding:0 16px;scrollbar-width:none}.strip::-webkit-scrollbar{display:none}
+.strip{display:flex;overflow-x:auto;padding:4px 16px 10px;scroll-padding:0 16px;scrollbar-width:none}.strip::-webkit-scrollbar{display:none}
 .card{flex:0 0 auto;width:116px;text-align:left;padding:0;border-radius:var(--r);transition:transform .12s}
 .card.h{width:200px}
-.poster{position:relative;width:100%;aspect-ratio:2/3;border-radius:var(--r);overflow:hidden;background:var(--panel2)}
-.card.h .poster{aspect-ratio:16/9}
-.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.poster{position:relative;width:100%;height:0;padding-top:150%;border-radius:var(--r);overflow:hidden;background:var(--panel2)}
+.card.h .poster{padding-top:56.25%}
+.poster img,.poster .ph{position:absolute;top:0;left:0;width:100%;height:100%}.poster img{object-fit:cover;display:block}
 .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-weight:700;font-size:14px}
 .q{position:absolute;top:6px;left:6px;background:var(--accent);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
 .name{font-size:12.5px;margin-top:6px;line-height:1.25;color:#d6d6de;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card:focus-visible{outline:none;transform:scale(1.06)}.card:focus-visible .poster{box-shadow:0 0 0 3px #fff}
-.layer{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto}
+.card:focus{outline:none;transform:scale(1.06)}.card:focus .poster{box-shadow:0 0 0 3px #fff}
+.layer{position:fixed;top:0;right:0;bottom:0;left:0;z-index:20;background:var(--bg);overflow-y:auto}
 .close{position:fixed;top:12px;right:12px;z-index:3;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.65);font-size:18px}
 .hero{position:relative;height:44vh;min-height:220px;background:var(--panel) center/cover no-repeat}
-.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 30%,var(--bg))}
+.hero::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(transparent 30%,var(--bg))}
 .detail{position:relative;z-index:1;margin-top:-70px;padding:0 16px 30px;max-width:980px}
 .detail h1{margin:0 0 6px;font-size:26px}.meta{color:var(--muted);font-size:13px;margin-bottom:10px}
 .plot{color:#c9c9d3;line-height:1.5;font-size:14.5px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;background:var(--panel2);font-weight:600;margin:4px 6px 4px 0}
+.btn{display:inline-flex;align-items:center;padding:11px 18px;border-radius:8px;background:var(--panel2);font-weight:600;margin:4px 6px 4px 0}
 .btn.p{background:#fff;color:#000}
 .st{margin:20px 0 8px;font-size:15px;color:var(--muted);font-weight:600}
-.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:7px 12px;border-radius:999px;background:var(--panel2);font-size:13px}.chip.on{background:var(--accent)}
-.ep{display:flex;gap:12px;width:100%;text-align:left;padding:10px;border-radius:8px;background:var(--panel);margin-bottom:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap}.chips>*{margin:0 6px 6px 0}.chip{padding:7px 12px;border-radius:999px;background:var(--panel2);font-size:13px}.chip.on{background:var(--accent)}
+.ep{display:flex;width:100%;text-align:left;padding:10px;border-radius:8px;background:var(--panel);margin-bottom:8px;align-items:center}
 .ep .n{font-size:19px;font-weight:800;color:var(--muted);width:34px;text-align:center}.ep .t{flex:1}.ep b{display:block;font-size:14.5px}.ep span{color:var(--muted);font-size:12.5px}
 .ep .pg{height:3px;background:#333;border-radius:2px;margin-top:6px;overflow:hidden}.ep .pg i{display:block;height:100%;background:var(--accent)}
 .player{background:#000;display:flex;flex-direction:column}
 .player video{flex:1;width:100%;min-height:0;background:#000}
-.pbar{display:flex;gap:6px;align-items:center;padding:8px 12px;overflow-x:auto;background:#111}
+.pbar{display:flex;align-items:center;padding:8px 12px;overflow-x:auto;background:#111}
 .pbar .chip{white-space:nowrap}.ptitle{padding:10px 60px 6px 14px;font-weight:600}
 .sk .poster{background:linear-gradient(90deg,#1b1b24 0%,#262632 50%,#1b1b24 100%);background-size:200% 100%;animation:sh 1.2s infinite linear}
 .sk .name{height:12px;width:70%;background:#1f1f29;border-radius:4px}
 @keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.top>*{margin:4px}.strip>.card{margin-right:10px}.ep .n{margin-right:12px}.pbar>*{margin-right:6px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#2a2a35;padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw;box-shadow:0 4px 20px #0008}
 .box{max-width:520px;margin:40px auto;padding:20px;background:var(--panel);border-radius:12px}
 .box input{width:100%;background:var(--panel2);border:1px solid #2c2c38;border-radius:8px;padding:12px;font-size:15px;margin:10px 0}
@@ -70,12 +71,18 @@ select{max-width:46vw}#q{flex:1;min-width:140px}
 <div id="toast" class="toast hidden"></div>
 
 <script>
+window.onerror = function (m, src, line) {
+  var d = document.getElementById('main');
+  if (d) d.insertAdjacentHTML('afterbegin', '<div class="msg" style="color:#ff6b6b">Sayfa hatası: ' + m + ' (satır ' + line + '). WebView eskiyse Play Store\'dan "Android System WebView" güncelle.</div>');
+};
+</script>
+<script>
 'use strict';
 /* CloudStream HTML ön yüz.
  * İçerikler telefondaki/TV'deki CloudStream uygulamasından (port 8686) gelir.
  * Bu dosyayı uygulama sunar (http://IP:8686) ya da tek başına açabilirsin; o zaman IP sorar. */
 const $ = (s, r = document) => r.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 let BASE = '';
@@ -93,8 +100,8 @@ async function api(path, params = {}) {
 }
 async function tryBase(b) {
   try {
-    const c = new AbortController(); setTimeout(() => c.abort(), 4000);
-    const r = await fetch(b + '/api/info', { signal: c.signal });
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('zaman aşımı')), 4000));
+    const r = await Promise.race([fetch(b + '/api/info'), timeout]);
     return r.ok;
   } catch (e) { return false; }
 }
@@ -224,7 +231,7 @@ async function doSearch() {
 const prog = () => LS.get('progress', {});
 function saveProg(key, pos, dur, meta) {
   if (!dur || !isFinite(dur) || pos < 5) return;
-  const p = prog(); p[key] = { ...(p[key] || {}), ...meta, pos, dur, t: Date.now() };
+  const p = prog(); p[key] = Object.assign({}, p[key] || {}, meta, { pos: pos, dur: dur, t: Date.now() });
   const keys = Object.keys(p).sort((a, b) => p[b].t - p[a].t); keys.slice(300).forEach(k => delete p[k]);
   LS.set('progress', p);
 }
@@ -306,17 +313,17 @@ async function openItem(it) {
     const eps = d.episodes || [];
     const dubs = [...new Set(eps.map(e => e.dub).filter(Boolean))];
     let dub = dubs[0] || null;
-    const seasonsOf = () => [...new Set(eps.filter(e => !dub || e.dub === dub).map(e => e.season ?? 1))].sort((a, b) => a - b);
+    const seasonsOf = () => [...new Set(eps.filter(e => !dub || e.dub === dub).map(e => (e.season == null ? 1 : e.season)))].sort((a, b) => a - b);
     let season = seasonsOf()[0];
     const draw = () => {
       const ss = seasonsOf();
-      const list = eps.filter(e => (!dub || e.dub === dub) && (e.season ?? 1) === season);
+      const list = eps.filter(e => (!dub || e.dub === dub) && ((e.season == null ? 1 : e.season)) === season);
       const pm = prog();
       act.innerHTML = `${dubs.length > 1 ? `<div class="st">Dil</div><div class="chips">${dubs.map(x => `<button class="chip ${x === dub ? 'on' : ''}" data-dub="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''}
         ${ss.length > 1 ? `<div class="st">Sezon</div><div class="chips">${ss.map(s => `<button class="chip ${s === season ? 'on' : ''}" data-season="${s}">${s}. Sezon</button>`).join('')}</div>` : ''}
         <div class="st">Bölümler (${list.length})</div>
         ${list.map((e) => { const p = pm[e.data]; const pc = p ? Math.min(100, Math.round(p.pos / p.dur * 100)) : 0;
-          return `<button class="ep" data-ep="${eps.indexOf(e)}"><div class="n">${e.episode ?? ''}</div><div class="t"><b>${esc(e.name || ('Bölüm ' + (e.episode ?? '')))}</b>
+          return `<button class="ep" data-ep="${eps.indexOf(e)}"><div class="n">${(e.episode == null ? '' : e.episode)}</div><div class="t"><b>${esc(e.name || ('Bölüm ' + ((e.episode == null ? '' : e.episode))))}</b>
           <span>${esc((e.description || '').slice(0, 140))}</span>${pc ? `<div class="pg"><i style="width:${pc}%"></i></div>` : ''}</div></button>`; }).join('') || '<div class="msg">Bölüm yok.</div>'}`;
     };
     draw();
@@ -325,7 +332,7 @@ async function openItem(it) {
     {
       const pm = prog();
       const started = eps.filter(e => pm[e.data] && pm[e.data].pos / pm[e.data].dur < 0.95).sort((a, b) => pm[b.data].t - pm[a.data].t)[0];
-      const first = eps.find(e => (!dub || e.dub === dub) && (e.season ?? 1) === season);
+      const first = eps.find(e => (!dub || e.dub === dub) && ((e.season == null ? 1 : e.season)) === season);
       prefetch(it.provider, (started || first || {}).data);
     }
     act.onclick = e => {
@@ -333,7 +340,7 @@ async function openItem(it) {
       const s = e.target.closest('[data-season]'); if (s) { season = Number(s.dataset.season); draw(); return; }
       const b = e.target.closest('[data-ep]');
       if (b) { const ep = eps[Number(b.dataset.ep)];
-        play(it.provider, ep.data, `${d.name} · S${ep.season ?? 1} B${ep.episode ?? ''}${ep.name ? ' – ' + ep.name : ''}`, itemRef); }
+        play(it.provider, ep.data, `${d.name} · S${(ep.season == null ? 1 : ep.season)} B${(ep.episode == null ? '' : ep.episode)}${ep.name ? ' – ' + ep.name : ''}`, itemRef); }
     };
   } else {
     act.innerHTML = '<div class="msg">Bu içerik türü (ör. torrent) tarayıcıda oynatılamıyor.</div>';
@@ -460,7 +467,7 @@ document.addEventListener('keydown', e => {
   if (a && /INPUT|SELECT/.test(a.tagName) && (d[0] !== 0 || a.tagName === 'SELECT')) return;
   const scope = layers.length ? layers[layers.length - 1].el : document.body;
   const els = [...scope.querySelectorAll('button,input,select,video')].filter(x => x !== a && (layers.length || !x.closest('#layers')) && x.getBoundingClientRect().width > 0);
-  if (!a || a === document.body) { els[0]?.focus(); e.preventDefault(); return; }
+  if (!a || a === document.body) { if (els[0]) els[0].focus(); e.preventDefault(); return; }
   const ar = a.getBoundingClientRect(), ax = ar.left + ar.width / 2, ay = ar.top + ar.height / 2;
   let best = null, bs = Infinity;
   for (const x of els) { const r = x.getBoundingClientRect(), dx = r.left + r.width / 2 - ax, dy = r.top + r.height / 2 - ay;
