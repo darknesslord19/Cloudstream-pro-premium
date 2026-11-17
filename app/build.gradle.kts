@@ -182,11 +182,8 @@ android {
     productFlavors {
         create("stable") {
             dimension = "state"
-            // html-api dalı: -PhtmlSeparate=true ile derlenirse asıl uygulamanın yanına ayrı kurulur.
-            // Parametresiz derleme asıl "CloudStream Dark"ın üzerine güncelleme olarak kurulur (eklentiler korunur).
-            if (project.findProperty("htmlSeparate") == "true") {
-                applicationIdSuffix = ".html"
-            }
+            // html-api dalı: her zaman asıl "CloudStream Dark"ın yanına ayrı uygulama olarak kurulur, onu ezmez.
+            applicationIdSuffix = ".html"
         }
         create("prerelease") {
             dimension = "state"

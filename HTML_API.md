@@ -4,7 +4,7 @@ Uygulama açıldığında yerel ağda `8686` portunda küçük bir sunucu başla
 
 ## Kullanım
 
-1. **CloudStreamHTML.apk** dosyasını kur. Asıl "CloudStream Dark" uygulamasının yanına ayrı olarak kurulur ve onu silmez. Depo ve eklentileri bu kopyaya bir kez eklemen gerekir.
+1. **CloudStreamHTML-ayri.apk** dosyasını telefona kur. Asıl "CloudStream Dark" uygulamasının yanına ayrı olarak kurulur ve ona dokunmaz. Depo ve eklentileri bu kopyaya bir kez eklemen gerekir.
 2. Uygulamayı aç, ekranda görünen adresi not al.
 3. Aynı Wi-Fi'daki herhangi bir cihazda:
    - Tarayıcıya adresi yaz: arayüzü uygulama kendisi sunar, **ya da**

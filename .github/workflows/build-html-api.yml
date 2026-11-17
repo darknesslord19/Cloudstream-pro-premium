@@ -39,24 +39,12 @@ jobs:
             echo "DARK_KEYSTORE_FILE=$RUNNER_TEMP/dark.jks" >> "$GITHUB_ENV"
           fi
 
-      - name: Build APK (güncelleme - asıl uygulamanın üzerine kurulur)
+      - name: Build APK (telefon - ayrı kurulum)
         run: |
           chmod +x gradlew
           ./gradlew assembleStableRelease --stacktrace
           mkdir -p out
-          cp app/build/outputs/apk/stable/release/*.apk out/CloudStreamDark-HTML-guncelleme.apk
-        env:
-          DARK_KEYSTORE_PASSWORD: ${{ secrets.DARK_KEYSTORE_PASSWORD }}
-          DARK_KEY_ALIAS: ${{ secrets.DARK_KEY_ALIAS }}
-          DARK_KEY_PASSWORD: ${{ secrets.DARK_KEY_PASSWORD }}
-
-      - name: Build APK (ayrı kurulum)
-        run: |
-          sed -i 's|<string name="app_name">CloudStream Dark</string>|<string name="app_name">CloudStream HTML</string>|' app/src/main/res/values/strings.xml
-          rm -rf app/build/outputs/apk
-          ./gradlew assembleStableRelease -PhtmlSeparate=true --stacktrace
           cp app/build/outputs/apk/stable/release/*.apk out/CloudStreamHTML-ayri.apk
-          git checkout app/src/main/res/values/strings.xml
           cp app/src/main/assets/htmlapi/index.html out/CloudStream.html
           ls -la out
         env:
@@ -113,8 +101,8 @@ jobs:
         run: |
           ls -la out
           gh release delete html-api --yes --cleanup-tag || true
-          gh release create html-api out/CloudStreamTV.apk out/CloudStreamDark-HTML-guncelleme.apk out/CloudStreamHTML-ayri.apk out/CloudStream.html \
+          gh release create html-api out/CloudStreamTV.apk out/CloudStreamHTML-ayri.apk out/CloudStream.html \
             --title "CloudStream HTML + TV (#${{ github.run_number }})" \
-            --notes "CloudStreamTV.apk: TV kutusuna kurulur; telefondaki CloudStream'i ağda bulur, arayüz HTML, oynatma cihazın kendi oynatıcısında (ExoPlayer). CloudStreamDark-HTML-guncelleme.apk: telefondaki CloudStream Dark üzerine kurulur, eklentiler korunur. CloudStreamHTML-ayri.apk: ayrı uygulama olarak kurulur. CloudStream.html: tarayıcıda açılacak tek dosya." \
+            --notes "CloudStreamTV.apk: TV kutusuna kurulur; telefondaki CloudStream'i ağda bulur, arayüz HTML, oynatma cihazın kendi oynatıcısında (ExoPlayer). CloudStreamHTML-ayri.apk: telefona ayrı uygulama olarak kurulur (asıl CloudStream Dark'a dokunmaz). CloudStream.html: tarayıcıda açılacak tek dosya." \
             --target "${{ github.sha }}" \
             --latest=false
