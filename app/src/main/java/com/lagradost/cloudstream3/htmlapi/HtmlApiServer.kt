@@ -9,7 +9,6 @@ import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.LiveStreamLoadResponse
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.MainAPI
-import com.lagradost.cloudstream3.MainPageRequest
 import com.lagradost.cloudstream3.MovieLoadResponse
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
@@ -17,6 +16,10 @@ import com.lagradost.cloudstream3.TorrentLoadResponse
 import com.lagradost.cloudstream3.TvSeriesLoadResponse
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.mvvm.Resource
+import com.lagradost.cloudstream3.ui.APIRepository
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -224,9 +227,11 @@ object HtmlApiServer {
                 "/api/load" -> {
                     val api = apiOf(q["provider"]) ?: return sendError(out, 404, "Eklenti bulunamadı")
                     val url = q["url"] ?: return sendError(out, 400, "url yok")
-                    val res = withTimeoutOrNull(45_000) { api.load(url) }
-                        ?: return sendError(out, 502, "İçerik yüklenemedi")
-                    sendJson(out, loadJson(res))
+                    when (val res = repo(api).load(url)) {
+                        is Resource.Success -> sendJson(out, loadJson(res.value))
+                        is Resource.Failure -> sendError(out, 502, res.errorString)
+                        else -> sendError(out, 502, "İçerik yüklenemedi")
+                    }
                 }
                 "/api/links" -> {
                     val api = apiOf(q["provider"]) ?: return sendError(out, 404, "Eklenti bulunamadı")
@@ -247,23 +252,30 @@ object HtmlApiServer {
     private fun providers(): List<MainAPI> =
         APIHolder.apis.withLock { APIHolder.apis.toList() }
 
+    /** CloudStream'in kendi ekranlarının kullandığı katman: alan adı yönlendirmesi, fixUrl, eklentiye özel zaman aşımı. */
+    private val repos = ConcurrentHashMap<String, APIRepository>()
+    private fun repo(api: MainAPI): APIRepository {
+        val cur = repos[api.name]
+        if (cur != null && cur.api === api) return cur
+        return APIRepository(api).also { repos[api.name] = it }
+    }
+
+    /** Oynatılan bağlantılar: eklentinin video interceptor'ı proxy'de uygulanabilsin diye. */
+    private val linkSeq = AtomicLong(0)
+    private val linkMap = ConcurrentHashMap<String, Pair<MainAPI, ExtractorLink>>()
+
     private fun apiOf(name: String?): MainAPI? =
         if (name.isNullOrBlank()) null else providers().firstOrNull { it.name == name }
 
     private suspend fun home(api: MainAPI, page: Int): JSONObject {
         val lists = JSONArray()
+        var error: String? = null
         if (api.hasMainPage) {
-            val results = api.mainPage.map { mp ->
-                scope.async {
-                    try {
-                        withTimeoutOrNull(30_000) {
-                            api.getMainPage(page, MainPageRequest(mp.name, mp.data, mp.horizontalImages))
-                        }
-                    } catch (t: Throwable) {
-                        null
-                    }
-                }
-            }.awaitAll()
+            val results = when (val res = repo(api).getMainPage(page)) {
+                is Resource.Success -> res.value
+                is Resource.Failure -> { error = res.errorString; emptyList() }
+                else -> emptyList()
+            }
             results.filterNotNull().forEach { r ->
                 r.items.forEach { hl ->
                     lists.put(JSONObject()
@@ -274,7 +286,7 @@ object HtmlApiServer {
                 }
             }
         }
-        return JSONObject().put("provider", api.name).put("page", page).put("lists", lists)
+        return JSONObject().put("provider", api.name).put("page", page).put("lists", lists).put("error", error)
     }
 
     private suspend fun search(query: String, provider: String?): JSONArray {
@@ -282,7 +294,9 @@ object HtmlApiServer {
         val results = targets.map { api ->
             scope.async {
                 val items = try {
-                    withTimeoutOrNull(25_000) { api.search(query, 1)?.items }
+                    withTimeoutOrNull(30_000) {
+                        (repo(api).search(query, 1) as? Resource.Success)?.value?.items
+                    }
                 } catch (t: Throwable) {
                     null
                 }
@@ -343,16 +357,17 @@ object HtmlApiServer {
         val links = Collections.synchronizedList(mutableListOf<ExtractorLink>())
         val subs = Collections.synchronizedList(mutableListOf<SubtitleFile>())
         try {
-            withTimeoutOrNull(60_000) {
-                api.loadLinks(data, false, { subs.add(it) }, { links.add(it) })
-            }
+            repo(api).loadLinks(data, false, { subs.add(it) }, { links.add(it) })
         } catch (t: Throwable) {
             Log.w(TAG, "loadLinks: $t")
         }
+        if (linkMap.size > 500) linkMap.clear()
         val linkArr = JSONArray()
         synchronized(links) {
             links.distinctBy { it.url }.sortedByDescending { it.quality }.forEach { l ->
                 val headers = l.getAllHeaders()
+                val id = linkSeq.incrementAndGet().toString()
+                linkMap[id] = api to l
                 linkArr.put(JSONObject()
                     .put("name", l.name)
                     .put("source", l.source)
@@ -360,7 +375,7 @@ object HtmlApiServer {
                     .put("quality", l.quality)
                     .put("type", l.type.name)
                     .put("headers", JSONObject(headers))
-                    .put("proxy", proxyPath(l.url, headers)))
+                    .put("proxy", proxyPath(l.url, headers, id) + if (l.type.name == "M3U8") "&m=1" else ""))
             }
         }
         val subArr = JSONArray()
@@ -383,8 +398,10 @@ object HtmlApiServer {
 
     private fun unb64(s: String) = String(Base64.decode(s, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING), Charsets.UTF_8)
 
-    private fun proxyPath(url: String, headers: Map<String, String>): String =
-        "/proxy?u=" + b64(url) + (if (headers.isEmpty()) "" else "&h=" + b64(JSONObject(headers).toString()))
+    private fun proxyPath(url: String, headers: Map<String, String>, linkId: String? = null): String =
+        "/proxy?u=" + b64(url) +
+            (if (headers.isEmpty()) "" else "&h=" + b64(JSONObject(headers).toString())) +
+            (if (linkId == null) "" else "&l=$linkId")
 
     private fun proxy(req: Req, out: OutputStream) {
         val url = req.query["u"]?.let { unb64(it) } ?: return sendError(out, 400, "u yok")
@@ -399,11 +416,20 @@ object HtmlApiServer {
         headers.forEach { (k, v) -> rb.header(k, v) }
         req.headers["range"]?.let { rb.header("Range", it) }
 
-        app.baseClient.newCall(rb.build()).execute().use { resp ->
+        val linkId = req.query["l"]
+        val client = linkId?.let { linkMap[it] }?.let { (api, link) ->
+            try { api.getVideoInterceptor(link) } catch (_: Throwable) { null }
+        }?.let { app.baseClient.newBuilder().addInterceptor(it).build() } ?: app.baseClient
+
+        client.newCall(rb.build()).execute().use { resp ->
             val body = resp.body ?: return sendError(out, 502, "Boş yanıt")
             val type = resp.header("Content-Type") ?: ""
             val path = url.substringBefore('?').lowercase()
-            val looksHls = type.contains("mpegurl", true) || path.endsWith(".m3u8") || path.endsWith(".m3u")
+            // Uzantısı .m3u8 olmayan HLS listelerini de içeriğine bakarak tanı
+            val looksHls = type.contains("mpegurl", true) || path.endsWith(".m3u8") || path.endsWith(".m3u") ||
+                (resp.isSuccessful && req.query["m"] == "1") ||
+                (resp.isSuccessful && !type.startsWith("video/") && !type.startsWith("audio/") &&
+                    try { resp.peekBody(16).string().trimStart().startsWith("#EXTM3U") } catch (_: Throwable) { false })
 
             if (req.query["vtt"] == "1") {
                 var text = body.string()
@@ -418,7 +444,7 @@ object HtmlApiServer {
                 val finalUrl = resp.request.url.toString()
                 val text = body.string()
                 if (text.trimStart().startsWith("#EXTM3U")) {
-                    val rewritten = rewritePlaylist(text, finalUrl, headers)
+                    val rewritten = rewritePlaylist(text, finalUrl, headers, linkId)
                     return send(out, 200, "application/vnd.apple.mpegurl", rewritten.toByteArray(Charsets.UTF_8))
                 }
                 return send(out, resp.code, type.ifEmpty { "application/octet-stream" }, text.toByteArray(Charsets.UTF_8))
@@ -435,15 +461,15 @@ object HtmlApiServer {
 
     private val uriAttr = Regex("URI=\"([^\"]+)\"")
 
-    private fun rewritePlaylist(text: String, base: String, headers: Map<String, String>): String {
+    private fun rewritePlaylist(text: String, base: String, headers: Map<String, String>, linkId: String?): String {
         val baseUri = URI(base)
         fun abs(u: String) = try { baseUri.resolve(u.trim()).toString() } catch (_: Throwable) { u }
         return text.lines().joinToString("\n") { line ->
             val t = line.trim()
             when {
                 t.isEmpty() -> line
-                t.startsWith("#") -> uriAttr.replace(line) { m -> "URI=\"" + proxyPath(abs(m.groupValues[1]), headers) + "\"" }
-                else -> proxyPath(abs(t), headers)
+                t.startsWith("#") -> uriAttr.replace(line) { m -> "URI=\"" + proxyPath(abs(m.groupValues[1]), headers, linkId) + "\"" }
+                else -> proxyPath(abs(t), headers, linkId)
             }
         }
     }

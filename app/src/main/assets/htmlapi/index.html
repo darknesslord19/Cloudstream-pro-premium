@@ -174,7 +174,7 @@ async function loadHome() {
     const r = await api('/api/home', { provider: p });
     if ($('#prov').value !== p) return;
     html += r.lists.map(l => row(l.name, l.items, '', l.horizontal)).join('');
-    main.innerHTML = html || '<div class="msg">Ana sayfa boş geldi.</div>';
+    main.innerHTML = html || `<div class="msg">${r.error ? 'Eklenti hatası: ' + esc(r.error) : 'Ana sayfa boş geldi.'}</div>`;
   } catch (e) { main.innerHTML = html + `<div class="msg">Yüklenemedi: ${esc(e.message)}</div>`; }
 }
 async function doSearch() {
@@ -315,18 +315,23 @@ async function play(provider, data, title, item, restart) {
       if (l.type === 'M3U8' && !v.canPlayType('application/vnd.apple.mpegurl')) {
         await loadScript('https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js', 'Hls');
         hls = new Hls({ maxBufferLength: 60 });
-        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) fail(); });
+        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) fail('HLS: ' + d.details + (d.response && d.response.code ? ' (HTTP ' + d.response.code + ')' : '')); });
         hls.loadSource(src); hls.attachMedia(v);
       } else if (l.type === 'DASH') {
         await loadScript('https://cdn.dashjs.org/latest/dash.all.min.js', 'dashjs');
         dash = dashjs.MediaPlayer().create(); dash.initialize(v, src, true);
       } else { v.src = src; }
-    } catch (e) { fail(); return; }
+    } catch (e) { fail(e.message); return; }
     v.onloadedmetadata = () => { if (t) v.currentTime = t; startAt = 0; };
     v.play().catch(() => {});
   };
-  const fail = () => { if (cur + 1 < links.length) { toast('Bağlantı açılmadı, sıradaki deneniyor…'); start(cur + 1); } else toast('Hiçbir bağlantı oynatılamadı.'); };
-  v.onerror = fail;
+  const errs = [];
+  const fail = (why) => {
+    errs[cur] = why || 'bilinmeyen hata';
+    if (cur + 1 < links.length) { toast(`${label(links[cur])}: ${errs[cur]} → sıradaki deneniyor`); start(cur + 1); }
+    else { drawBar(); bar.insertAdjacentHTML('afterbegin', `<span class="note" style="color:#ff6b6b">Oynatılamadı: ${esc(links.map((l, i) => label(l) + ' → ' + (errs[i] || '-')).join(' | '))}</span>`); }
+  };
+  v.onerror = () => { const c = v.error && v.error.code; fail({1: 'iptal', 2: 'ağ hatası', 3: 'çözülemedi (format)', 4: 'desteklenmeyen kaynak/format'}[c] || 'video hatası'); };
   let last = 0;
   v.ontimeupdate = () => { if (Date.now() - last > 5000) { last = Date.now(); saveProg(data, v.currentTime, v.duration, { item }); } };
   v.onended = () => { saveProg(data, v.duration, v.duration, { item }); popLayer(); };
